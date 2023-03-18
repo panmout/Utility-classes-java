@@ -52,7 +52,7 @@ public final class Point implements Serializable
         if (z == Double.NEGATIVE_INFINITY) // 2d
             return String.format("%d\t%9.8f\t%9.8f", this.getId(), this.getX(), this.getY());
         else // 3d
-            return String.format("%d\t%9.8f\t%9.8f\t9.8f", this.getId(), this.getX(), this.getY(), this.getZ());
+            return String.format("%d\t%9.8f\t%9.8f\t%9.8f", this.getId(), this.getX(), this.getY(), this.getZ());
     }
 
     public String stringCoords()
@@ -60,6 +60,6 @@ public final class Point implements Serializable
         if (z == Double.NEGATIVE_INFINITY) // 2d
             return String.format("%9.8f\t%9.8f", this.getX(), this.getY());
         else // 3d
-            return String.format("%9.8f\t%9.8f\t9.8f", this.getX(), this.getY(), this.getZ());
+            return String.format("%9.8f\t%9.8f\t%9.8f", this.getX(), this.getY(), this.getZ());
     }
 }
