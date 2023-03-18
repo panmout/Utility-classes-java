@@ -18,7 +18,7 @@ public final class PS_Neighbors implements Function<Tuple2<Iterable<Point>, Iter
 	public PS_Neighbors(int k)
 	{
 		this.k = k;
-		this.neighbors = new PriorityQueue<IdDist>(this.k, new IdDistComparator("max"));
+		this.neighbors = new PriorityQueue<>(this.k, new IdDistComparator("max"));
 		this.qpoint_neighbors = new ArrayList<>();
 		this.qpoints = new ArrayList<>();
 		this.tpoints = new ArrayList<>();
@@ -91,7 +91,7 @@ public final class PS_Neighbors implements Function<Tuple2<Iterable<Point>, Iter
 						cont_search = getPsNeighbors(qpoint, high--);
 	 		} // end empty tpoints check
   			
- 			this.qpoint_neighbors.add(new Tuple2<Point, PriorityQueue<IdDist>>(qpoint, new PriorityQueue<IdDist>(this.neighbors)));
+ 			this.qpoint_neighbors.add(new Tuple2<>(qpoint, new PriorityQueue<>(this.neighbors)));
 			this.neighbors.clear();
 	 	} // end query points traverse
  		

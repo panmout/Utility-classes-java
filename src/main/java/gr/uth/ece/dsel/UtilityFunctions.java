@@ -254,10 +254,12 @@ public final class UtilityFunctions
 	}
 	
 	// PriorityQueue<IdDist> to String
-	public static String pqToString(PriorityQueue<IdDist> pq, int k)
+	public static String pqToString(PriorityQueue<IdDist> pq, int k, String comp)
 	{
 		// if we use pq directly, it will modify the original PQ, so we make a copy
-		PriorityQueue<IdDist> newPQ = new PriorityQueue<>(pq);
+		PriorityQueue<IdDist> newPQ = new PriorityQueue<>(k, new IdDistComparator(comp));
+
+		newPQ.addAll(pq);
 
 		StringBuilder output = new StringBuilder();
 
