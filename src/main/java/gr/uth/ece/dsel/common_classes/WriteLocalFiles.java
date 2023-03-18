@@ -1,16 +1,17 @@
 package gr.uth.ece.dsel.common_classes;
 
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Formatter;
 import java.util.FormatterClosedException;
 
 public final class WriteLocalFiles
 {
-    public static void writeFile(String file, String content)
+    public static void writeFile(String file, String content, boolean appendable)
     {
         try
         {
-            Formatter outputTextFile = new Formatter(file);
+            Formatter outputTextFile = new Formatter(new FileWriter(file, appendable));
             outputTextFile.format(content);
             outputTextFile.close();
         }
