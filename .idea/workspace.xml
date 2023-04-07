@@ -7,7 +7,7 @@
     <list default="true" id="f116f064-8026-4f5c-8a4d-9253984b01b7" name="Changes" comment="First commit">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/gr/uth/ece/dsel/UtilityFunctions.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/gr/uth/ece/dsel/UtilityFunctions.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/gr/uth/ece/dsel/aknn_spark/PS_Neighbors.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/gr/uth/ece/dsel/aknn_spark/PS_Neighbors.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/gr/uth/ece/dsel/aknn_hadoop/GetOverlaps.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/gr/uth/ece/dsel/aknn_hadoop/GetOverlaps.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -25,6 +25,11 @@
     </option>
   </component>
   <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="master" />
+      </map>
+    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="MarkdownSettingsMigration">
@@ -35,11 +40,6 @@
       <MavenGeneralSettings>
         <option name="useMavenConfig" value="true" />
       </MavenGeneralSettings>
-    </option>
-    <option name="importingSettings">
-      <MavenImportingSettings>
-        <option name="workspaceImportEnabled" value="true" />
-      </MavenImportingSettings>
     </option>
   </component>
   <component name="ProjectCodeStyleSettingsMigration">
@@ -55,6 +55,7 @@
   &quot;keyToString&quot;: {
     &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;new-gd-overlaps&quot;,
     &quot;last_opened_file_path&quot;: &quot;/home/pmoutafis/nearest-neighbor-queries/AKNNQ-Hadoop&quot;
   }
 }</component>

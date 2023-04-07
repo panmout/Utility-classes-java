@@ -3,6 +3,7 @@ package gr.uth.ece.dsel;
 import gr.uth.ece.dsel.common_classes.*;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.PriorityQueue;
 
 public final class UtilityFunctions
@@ -242,7 +243,7 @@ public final class UtilityFunctions
 		}
 		return "";
 	}
-	
+
 	// check for duplicates in PriorityQueue
 	public static boolean isDuplicate(PriorityQueue<IdDist> pq, IdDist neighbor)
 	{
