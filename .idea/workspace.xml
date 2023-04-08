@@ -6,7 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="f116f064-8026-4f5c-8a4d-9253984b01b7" name="Changes" comment="First commit">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/gr/uth/ece/dsel/UtilityFunctions.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/gr/uth/ece/dsel/UtilityFunctions.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/gr/uth/ece/dsel/aknn_hadoop/GetOverlaps.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/gr/uth/ece/dsel/aknn_hadoop/GetOverlaps.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -101,7 +100,14 @@
       <option name="project" value="LOCAL" />
       <updated>1679164117133</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="First commit">
+      <created>1680904301345</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1680904301345</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
