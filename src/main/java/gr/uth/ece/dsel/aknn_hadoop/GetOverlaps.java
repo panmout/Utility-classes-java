@@ -215,12 +215,10 @@ public final class GetOverlaps
 		}
 
 		// case 1: there are at least knn in this cell and circle/sphere with radius R is completely inside the cell
-		if (tpointsInQcell >= this.K && circleContainedInCell(xq, yq, zq, R, intQCell, ds))
-		{
+		if (tpointsInQcell >= this.K && circleContainedInCellGD(xq, yq, zq, R, intQCell, ds)) {
 			// point goes straight to next phase
 			this.overlaps.add(qcell); // add qpoint cell
-		}
-		else // case 2: not enough neighbors in query point cell or circle overlaps other cells
+		} else // case 2: not enough neighbors in query point cell or circle overlaps other cells
 		{
 			int overlaps_points = tpointsInQcell; // total number of training points in overlaps
 
@@ -249,6 +247,9 @@ public final class GetOverlaps
 
 				addCellsList.clear();
 
+				// remove query point cell (because its training points have been already counted)
+				candidateOverlaps.remove(intQCell);
+
 				// check each cell in list if overlaps with circle/sphere
 				for (int cell : candidateOverlaps) {
 					final String strCell = String.valueOf(cell);
@@ -256,10 +257,10 @@ public final class GetOverlaps
 					// proceed only if this cell contains any training points
 					if (this.cell_tpoints.containsKey(strCell)) {
 						// get cell's borders (xmin, xmax, ymin, ymax, zmin, zmax)
-						final double xmin = cellBorders(cell, ds)[0];
-						final double xmax = cellBorders(cell, ds)[1];
-						final double ymin = cellBorders(cell, ds)[2];
-						final double ymax = cellBorders(cell, ds)[3];
+						final double xmin = cellBorders(cell)[0];
+						final double xmax = cellBorders(cell)[1];
+						final double ymin = cellBorders(cell)[2];
+						final double ymax = cellBorders(cell)[3];
 
 						if (!this.is3d) // 2d
 						{
@@ -267,8 +268,8 @@ public final class GetOverlaps
 								this.overlaps.add(strCell);
 						} else // 3d
 						{
-							final double zmin = cellBorders(cell, ds)[4];
-							final double zmax = cellBorders(cell, ds)[5];
+							final double zmin = cellBorders(cell)[4];
+							final double zmax = cellBorders(cell)[5];
 
 							if (sphereCubeIntersect(xq, yq, zq, R, xmin, xmax, ymin, ymax, zmin, zmax))
 								this.overlaps.add(strCell);
@@ -313,10 +314,9 @@ public final class GetOverlaps
 		}
 
 		/* If
-		 * root cell side length = L
-		 * and for example
-		 * cell id = 3012 (4 digits)
-		 * then cell's length = L / (2 ^ 4)
+		 * root cell's side length = L
+		 * and cell id has n digits
+		 * then cell's side length = L / (2 ^ n)
 		 */
 
 		// total number of training points in this cell, 0 if null
@@ -328,32 +328,12 @@ public final class GetOverlaps
 		// else half the cell width
 		double R = !this.neighbors.isEmpty() ? this.neighbors.peek().getDist() : 0.5 * ds;
 
-		// case 1: there are at least knn in this cell
-		if (tpointsInQcell >= this.K) {
-			// draw circle/sphere and check for overlaps
-			// 2d
-			if (!this.is3d)
-				rangeQuery(xq, yq, R, this.root, "");
-				// 3d
-			else
-				rangeQuery(xq, yq, zq, R, this.root, "");
-
-			// remove containing cell
-			this.overlaps.remove(qcell);
-
-			// remove overlaps not containing training points
-			this.overlaps.removeIf(s -> !this.cell_tpoints.containsKey(s));
-
-			// subcase 1: no overlaps containing any tpoints, point goes straight to next phase
-			if (this.overlaps.isEmpty())
-				this.overlaps.add(qcell); // add qpoint cell
-
-			// subcase 2: there are overlaps, additional checks must be made in next phase
-			// nothing to do here, overlaps are already updated
-		}
-
-		// case 2: there are less than knn in this cell
-		else {
+		// case 1: there are at least knn in this cell and circle/sphere with radius R is completely inside the cell
+		if (tpointsInQcell >= this.K && circleContainedInCellQT(xq, yq, zq, R, qcell)) {
+			// point goes straight to next phase
+			this.overlaps.add(qcell); // add qpoint cell
+		} else // case 2: not enough neighbors in query point cell or circle overlaps other cells
+		{
 			/* Define a new increasing radius r1:
 			 * - if there are already x < k neighbors in this cell, we suppose a constant density of training points, so
 			 *   (2d) in a circle of radius r and area pi*r*r we get x neighbors
@@ -368,137 +348,91 @@ public final class GetOverlaps
 			 *   (3d) r1 = 1.2*cubic_root(k)*r
 			 *   (we gave it an additional 20% boost)
 			 */
-			double r1 = 0;
+
+			double r1;
+
 			int n = this.neighbors.size() / 2; // divide by 2 because knnlist also contains distances (size = 2*[number of neighbors])
+
 			// if x > 0 (there are some neighbors in the list) set first value
 			// else (no neighbors) set second value
 
-			// 2d
-			if (!this.is3d)
+			if (!this.is3d) // 2d
 				r1 = (n > 0) ? Math.sqrt((double) this.K / n) * R : 1.2 * Math.sqrt(this.K) * R;
-				// 3d
-			else
+			else // 3d
 				r1 = (n > 0) ? Math.cbrt((double) this.K / n) * R : 1.2 * Math.cbrt(this.K) * R;
 
-			int overlaps_points = 0; // total number of training points in overlaps
+			int overlaps_points = tpointsInQcell; // total number of training points in overlaps
 
-			int loopvar = 0; // loop control variable (runs until it finds >=k tpoints, then once more)
-			while (loopvar < 2) // trying to find overlaps to fill k-nn
+			// cells in this list have already contributed their training points
+			final HashSet<String> checkedCells = new HashSet<>();
+
+			checkedCells.add(qcell); // query point's cell training points have already been counted
+
+			int sentinel = 0; // loop control variable
+
+			// runs until it finds >=k tpoints, then once more
+			while (sentinel < 2)
 			{
-				overlaps_points = 0; // reset value
-				this.overlaps.clear(); // clear overlaps list
-
 				// draw circle/sphere and check for overlaps
-				// 2d
-				if (!this.is3d)
+				if (!this.is3d) // 2d
 					rangeQuery(xq, yq, r1, this.root, "");
-					// 3d
-				else
+				else // 3d
 					rangeQuery(xq, yq, zq, r1, this.root, "");
 
-				// remove containing cell
-				this.overlaps.remove(qcell);
+				// remove query point cell (because its training points have been already counted)
+				// also remove empty cells
+				this.overlaps.removeIf(cell -> (cell.equals(qcell) || !this.cell_tpoints.containsKey(cell)));
 
-				for (String cell : this.overlaps)
-					if (this.cell_tpoints.containsKey(cell)) // count points from non-empty cells
-						overlaps_points += this.cell_tpoints.get(cell); // add this overlap's training points
+				// now find total training points from overlaps
+				if (!this.overlaps.isEmpty())
+					for (String cell : this.overlaps) {
+						if (!checkedCells.contains(cell)) // exclude those already counted
+							overlaps_points += cell_tpoints.get(cell);
+
+						checkedCells.add(cell);
+					}
 
 				r1 += 0.1 * r1; // increase radius by 10%
 
 				// if k neighbors found (first time only), run loop one more time and set r1 equal to the maximum distance from ipoint to all overlapped cells
-				if ((tpointsInQcell + overlaps_points >= this.K) && (loopvar == 0)) {
-					loopvar++;
+				if ((overlaps_points >= this.K) && (sentinel == 0)) {
+					sentinel++;
+
 					double maxSqrDist = 0; // square of maximum distance found so far (ipoint to cell)
+
 					for (String cell : this.overlaps) // for every cell in overlaps
 					{
-						if (this.cell_tpoints.containsKey(cell)) // only non-empty cells
+						// get cell's borders
+						final double xmin = cellBorders(cell)[0];
+						final double xmax = cellBorders(cell)[1];
+						final double ymin = cellBorders(cell)[2];
+						final double ymax = cellBorders(cell)[3];
+						final double zmin = cellBorders(cell)[4];
+						final double zmax = cellBorders(cell)[5];
+
+						// maximum ipoint distance from cell in x-direction
+						final double maxX = Math.max(Math.abs(xq - xmin), Math.abs(xq - xmax));
+						// maximum ipoint distance from cell in y-direction
+						final double maxY = Math.max(Math.abs(yq - ymin), Math.abs(yq - ymax));
+
+						if (!this.is3d) // 2d
 						{
-							// 2d
-							if (!this.is3d) {
-								double x0 = 0; // cell's lower left corner coords initialization
-								double y0 = 0;
-								for (int i = 0; i < cell.length(); i++) // check cellname's digits
-								{
-									switch(cell.charAt(i)) {
-										case '0':
-											y0 += 1.0 / Math.pow(2, i + 1); // if digit = 0 increase y0
-											break;
-										case '1':
-											x0 += 1.0 / Math.pow(2, i + 1); // if digit = 1 increase x0
-											y0 += 1.0 / Math.pow(2, i + 1); // and y0
-											break;
-										case '3':
-											x0 += 1.0 / Math.pow(2, i + 1); // if digit = 3 increase x0
-											break;
-									}
-								}
-								double s = 1.0 / Math.pow(2, cell.length()); // cell side length
-								/* cell's lower left corner: x0, y0
-								 *        upper left corner: x0, y0 + s
-								 *        upper right corner: x0 + s, y0 + s
-								 *        lower right corner: x0 + s, y0
-								 */
-								double maxX = Math.max(Math.abs(xq - x0), Math.abs(xq - x0 - s)); // maximum ipoint distance from cell in x-direction
-								double maxY = Math.max(Math.abs(yq - y0), Math.abs(yq - y0 - s)); // maximum ipoint distance from cell in y-direction
-								if (maxX * maxX + maxY * maxY > maxSqrDist)
-									maxSqrDist = maxX * maxX + maxY * maxY; // replace current maximum squared distance if new is bigger
-							}
-							// 3d
-							else {
-								double x0 = 0; // cell's floor south west corner coords initialization
-								double y0 = 0;
-								double z0 = 0;
-								for (int i = 0; i < cell.length(); i++) // check cellname's digits
-								{
-									switch(cell.charAt(i)) {
-										case '0':
-											y0 += 1.0 / Math.pow(2, i + 1); // if digit = 0 increase y0
-											break;
-										case '1':
-											x0 += 1.0 / Math.pow(2, i + 1); // if digit = 1 increase x0
-											y0 += 1.0 / Math.pow(2, i + 1); // and y0
-											break;
-										case '3':
-											x0 += 1.0 / Math.pow(2, i + 1); // if digit = 3 increase x0
-											break;
-										case '4':
-											y0 += 1.0 / Math.pow(2, i + 1); // if digit = 4 increase y0
-											z0 += 1.0 / Math.pow(2, i + 1); // and z0
-											break;
-										case '5':
-											x0 += 1.0 / Math.pow(2, i + 1); // if digit = 5 increase x0
-											y0 += 1.0 / Math.pow(2, i + 1); // and y0
-											z0 += 1.0 / Math.pow(2, i + 1); // and z0
-											break;
-										case '6':
-											z0 += 1.0 / Math.pow(2, i + 1); // if digit = 6 increase z0
-											break;
-										case '7':
-											x0 += 1.0 / Math.pow(2, i + 1); // if digit = 7 increase x0
-											z0 += 1.0 / Math.pow(2, i + 1); // and z0
-											break;
-									}
-								}
-								double s = 1.0 / Math.pow(2, cell.length()); // cell side length
-								/* cell's xmin = x0
-								 *        xmax = x0 + s
-								 *        ymin = y0
-								 *        ymax = y0 + s
-								 * 	      zmin = z0
-								 *        zmax = z0 + s
-								 */
-								double maxX = Math.max(Math.abs(xq - x0), Math.abs(xq - x0 - s)); // maximum ipoint distance from cell in x-direction
-								double maxY = Math.max(Math.abs(yq - y0), Math.abs(yq - y0 - s)); // maximum ipoint distance from cell in y-direction
-								double maxZ = Math.max(Math.abs(zq - z0), Math.abs(zq - z0 - s)); // maximum ipoint distance from cell in z-direction
-								if (maxX * maxX + maxY * maxY + maxZ * maxZ > maxSqrDist)
-									maxSqrDist = maxX * maxX + maxY * maxY + maxZ * maxZ; // replace current maximum squared distance if new is bigger
-							}
-						} // end if
+							// replace current maximum squared distance if new is bigger
+							maxSqrDist = Math.max(maxSqrDist, maxX * maxX + maxY * maxY);
+						}
+						else // 3d
+						{
+							// maximum ipoint distance from cell in z-direction
+							final double maxZ = Math.max(Math.abs(zq - zmin), Math.abs(zq - zmax));
+
+							// replace current maximum squared distance if new is bigger
+							maxSqrDist = Math.max(maxSqrDist, maxX * maxX + maxY * maxY + maxZ * maxZ);
+						}
 					} // end for
 					r1 = Math.sqrt(maxSqrDist); // run overlaps check once more with this radius
 				} // end if
-				else if (loopvar == 1)
-					loopvar++;
+				else if (sentinel == 1)
+					sentinel++;
 			} // end while
 		}
 	}
@@ -604,8 +538,7 @@ public final class GetOverlaps
 	}
 
 	// 3d sphere - cube intersection check
-	private boolean sphereCubeIntersect (double x, double y, double z, double r, double xmin, double xmax, double ymin, double ymax, double zmin, double zmax)
-	{
+	private boolean sphereCubeIntersect (double x, double y, double z, double r, double xmin, double xmax, double ymin, double ymax, double zmin, double zmax) {
 		// if point is inside cell return true
 		if (x >= xmin && x <= xmax && y >= ymin && y <= ymax && z >= zmin && z <= zmax)
 			return true;
@@ -711,12 +644,14 @@ public final class GetOverlaps
 	}
 
 	// get min & max x, y, z of GD cell in integer form
-	private double[] cellBorders (int cell, double ds) {
+	private double[] cellBorders (int cell) {
 		final double[] borders = new double[6];
 
 		final int i = cellIJK(cell)[0];
 		final int j = cellIJK(cell)[1];
 		final int k = cellIJK(cell)[2];
+
+		final double ds = 1.0 / this.N;
 
 		borders[0] = i * ds; // xmin
 		borders[1] = (i + 1) * ds; // xmax
@@ -728,30 +663,107 @@ public final class GetOverlaps
 		return borders;
 	}
 
+	// get min & max x, y, z of QT cell in string form
+	private double[] cellBorders (String cell) {
+
+		double xmin = 0; // cell's floor-south-west corner coords initialization
+		double ymin = 0;
+		double zmin = this.is3d ? 0 : Double.NEGATIVE_INFINITY;
+
+		for (int i = 0; i < cell.length(); i++) // check cellname's digits
+		{
+			switch(cell.charAt(i)) {
+				case '0': // 2d / 3d
+					ymin += 1.0 / Math.pow(2, i + 1); // if digit = 0 increase y0
+					break;
+				case '1': // 2d / 3d
+					xmin += 1.0 / Math.pow(2, i + 1); // if digit = 1 increase x0
+					ymin += 1.0 / Math.pow(2, i + 1); // and y0
+					break;
+				case '3': // 2d / 3d
+					xmin += 1.0 / Math.pow(2, i + 1); // if digit = 3 increase x0
+					break;
+				case '4': // 3d only
+					ymin += 1.0 / Math.pow(2, i + 1); // if digit = 4 increase y0
+					zmin += 1.0 / Math.pow(2, i + 1); // and z0
+					break;
+				case '5': // 3d only
+					xmin += 1.0 / Math.pow(2, i + 1); // if digit = 5 increase x0
+					ymin += 1.0 / Math.pow(2, i + 1); // and y0
+					zmin += 1.0 / Math.pow(2, i + 1); // and z0
+					break;
+				case '6':
+					zmin += 1.0 / Math.pow(2, i + 1); // if digit = 6 increase z0
+					break;
+				case '7': // 3d only
+					xmin += 1.0 / Math.pow(2, i + 1); // if digit = 7 increase x0
+					zmin += 1.0 / Math.pow(2, i + 1); // and z0
+					break;
+			}
+		}
+
+		final double ds = 1.0 / Math.pow(2, cell.length()); // cell side length
+
+		final double xmax = xmin + ds;
+		final double ymax = ymin + ds;
+		final double zmax = zmin + ds;
+
+		/*
+		 * cell's lower left corner: xmin, ymin
+		 *        upper left corner: xmin, ymax
+		 *        upper right corner: xmax, ymax
+		 *        lower right corner: xmax, ymin
+		 *
+		 */
+
+		return new double[]{xmin, xmax, ymin, ymax, zmin, zmax};
+	}
+
 	// get GD cell's i, j, k
 	private int[] cellIJK (int cell) {
 		final int iq = cell % this.N; // get i (2d/3d)
 		final int jq = !this.is3d ? (cell - iq) / this.N : ((cell - iq) / this.N) % this.N; // get j (2d/3d)
 		final int kq = !this.is3d ? Integer.MIN_VALUE : ((cell - iq) / this.N - jq) / this.N; // get k (3d only)
 
-		final int[] ijk = new int[3];
-
-		ijk[0] = iq;
-		ijk[1] = jq;
-		ijk[2] = kq;
-
-		return ijk;
+		return new int[]{iq, jq, kq};
 	}
 
 	// return true if circle/sphere (x, y, z, r) is completely inside cell
-	private boolean circleContainedInCell (double x, double y, double z, double r, int cell, double ds) {
+	private boolean circleContainedInCellGD (double x, double y, double z, double r, int cell, double ds) {
 		// get cell's borders (xmin, xmax, ymin, ymax, zmin, zmax)
-		final double xmin = cellBorders(cell, ds)[0];
-		final double xmax = cellBorders(cell, ds)[1];
-		final double ymin = cellBorders(cell, ds)[2];
-		final double ymax = cellBorders(cell, ds)[3];
-		final double zmin = cellBorders(cell, ds)[4];
-		final double zmax = cellBorders(cell, ds)[5];
+		final double xmin = cellBorders(cell)[0];
+		final double xmax = cellBorders(cell)[1];
+		final double ymin = cellBorders(cell)[2];
+		final double ymax = cellBorders(cell)[3];
+		final double zmin = cellBorders(cell)[4];
+		final double zmax = cellBorders(cell)[5];
+
+		// if r > distance of center to cell borders, circle is not completely inside cell
+		if (r > Math.abs(x - xmin))
+			return false;
+		if (r > Math.abs(x - xmax))
+			return false;
+		if (r > Math.abs(y - ymin))
+			return false;
+		if (r > Math.abs(y - ymax))
+			return false;
+		if (this.is3d && r > Math.abs(z - zmin))
+			return false;
+		if (this.is3d && r > Math.abs(z - zmax))
+			return false;
+
+		return true;
+	}
+
+	// return true if circle/sphere (x, y, z, r) is completely inside cell
+	private boolean circleContainedInCellQT (double x, double y, double z, double r, String cell) {
+		// get cell's borders (xmin, xmax, ymin, ymax, zmin, zmax)
+		final double xmin = cellBorders(cell)[0];
+		final double xmax = cellBorders(cell)[1];
+		final double ymin = cellBorders(cell)[2];
+		final double ymax = cellBorders(cell)[3];
+		final double zmin = cellBorders(cell)[4];
+		final double zmax = cellBorders(cell)[5];
 
 		// if r > distance of center to cell borders, circle is not completely inside cell
 		if (r > Math.abs(x - xmin))
