@@ -303,12 +303,10 @@ public final class GetOverlaps
 		// read query point coordinates and neighbors list
 		final double xq = qpoint.getX();
 		final double yq = qpoint.getY();
+		final double zq = qpoint.getZ();
+
 		// check if 3d
-		double zq = Double.NEGATIVE_INFINITY;
-		if (qpoint.getZ() != Double.NEGATIVE_INFINITY) {
-			zq = qpoint.getZ();
-			this.is3d = true;
-		}
+		this.is3d = (zq != Double.NEGATIVE_INFINITY);
 
 		/* If
 		 * root cell's side length = L
