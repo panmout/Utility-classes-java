@@ -12,17 +12,14 @@ public final class UtilityFunctions
 	public static double distance (double x1, double y1, double x2, double y2)
 	{
 		return Math.sqrt(square_distance (x1, y1, x2, y2));
-	}// end Euclidean distance
-	}// end Euclidean distance
+	}
 	
 	// return euclidean distance between two 3d points (x1, y1, z1) and (x2, y2, z2)
 	public static double distance (double x1, double y1, double z1, double x2, double y2, double z2)
 	{
 		return Math.sqrt(square_distance (x1, y1, z1, x2, y2, z2));
-	}// end Euclidean distance
-	}// end Euclidean distance
+	}
 	
-	// return Euclidean distance between two points
 	// return Euclidean distance between two points
 	public static double distance (Point ipoint, Point tpoint)
 	{
@@ -31,23 +28,19 @@ public final class UtilityFunctions
 			return distance(ipoint.getX(), ipoint.getY(), ipoint.getZ(), tpoint.getX(), tpoint.getY(), tpoint.getZ());
 		else // 2d points
 			return distance(ipoint.getX(), ipoint.getY(), tpoint.getX(), tpoint.getY());
-	}// end Euclidean distance
-	}// end Euclidean distance
+	}
 	
 	// return square of euclidean distance between two 2d points (x1, y1) and (x2, y2)
 	public static double square_distance (double x1, double y1, double x2, double y2)
 	{
 		return Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2);
-	}// end square of Euclidean distance
-	}// end square of Euclidean distance
+	}
 	
-	// return square of Euclidean distance between two 3d points (x1, y1, z1) and (x2, y2, z2)
 	// return square of Euclidean distance between two 3d points (x1, y1, z1) and (x2, y2, z2)
 	public static double square_distance (double x1, double y1, double z1, double x2, double y2, double z2)
 	{
 		return Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2) + Math.pow(z1 - z2,  2);
-	}// end square of Euclidean distance
-	}// end square of Euclidean distance
+	}
 	
 	// return x-distance between two points
 	public static double xDistance (Point qpoint, Point tpoint)
