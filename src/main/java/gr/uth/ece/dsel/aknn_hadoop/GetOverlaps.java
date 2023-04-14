@@ -419,6 +419,16 @@ public final class GetOverlaps
 		} // end else
 	} // end getOverlapsQT
 
+		// 2d quadtree intersect
+	private boolean intersect (double x, double y, double r, Node node) {
+		return UtilityFunctions.circleSquareIntersect(x, y, r, node.getXmin(), node.getXmax(), node.getYmin(), node.getYmax());
+	}
+
+	// 3d quadtree intersect
+	private boolean intersect (double x, double y, double z, double r, Node node) {
+		return UtilityFunctions.sphereCubeIntersect(x, y, z, r, node.getXmin(), node.getXmax(), node.getYmin(), node.getYmax(), node.getZmin(), node.getZmax());
+	}
+
 	// 2d quadtree range query
 	private void rangeQuery (double x, double y, double r, Node node, String address) {
 		if (node.getNW() == null) // leaf node
