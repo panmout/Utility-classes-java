@@ -218,7 +218,7 @@ public final class GetOverlaps
 			this.overlaps.add(qcell); // add qpoint cell
 		} else // case 2: not enough neighbors in query point cell or circle overlaps other cells
 		{
-			int overlaps_points = tpointsInQcell; // total number of training points in overlaps
+			//int overlaps_points = tpointsInQcell; // total number of training points in overlaps
 
 			int sentinel = 0; // loop control variable
 
@@ -228,33 +228,26 @@ public final class GetOverlaps
 			candidateOverlaps.add(intQCell);
 
 			// dummy set of cells to be added (throws ConcurrentModificationException if trying to modify set while traversing it)
-			final HashSet<Integer> addCellsList = new HashSet<>();
-
-			// cells in this list have already contributed their training points
-			final HashSet<String> checkedCells = new HashSet<>();
-
-			checkedCells.add(qcell); // query point's cell training points have already been counted
+			final HashSet<Integer> tempOverlaps = new HashSet<>();
 
 			// runs until it finds >=k tpoints, then once more
 			while (sentinel < 2) {
+				int overlaps_points = 0; // total number of training points in overlaps
+
 				// get new layer of surrounding cells
 				for (int cell : candidateOverlaps)
-					addCellsList.addAll(surroundingCells(cell, this.N, south_row, north_row, west_column, east_column, bottom_level, top_level));
+					tempOverlaps.addAll(surroundingCells(cell, south_row, north_row, west_column, east_column, bottom_level, top_level));
 
-				candidateOverlaps.addAll(addCellsList);
+				candidateOverlaps.addAll(tempOverlaps);
 
-				addCellsList.clear();
-
-				// remove query point cell (because its training points have been already counted)
-				candidateOverlaps.remove(intQCell);
+				tempOverlaps.clear();
 
 				// check each cell in list if overlaps with circle/sphere
 				for (int cell : candidateOverlaps) {
 					final String strCell = String.valueOf(cell);
 
 					// proceed only if this cell contains any training points
-					// and exclude those already counted
-					if (!checkedCells.contains(strCell) && this.cell_tpoints.containsKey(strCell)) {
+					if (this.cell_tpoints.containsKey(strCell)) {
 						// get cell's borders (xmin, xmax, ymin, ymax, zmin, zmax)
 						final double xmin = cellBorders(cell)[0];
 						final double xmax = cellBorders(cell)[1];
@@ -276,17 +269,19 @@ public final class GetOverlaps
 					}
 				}
 
-				// now find total training points from overlaps
+				// remove query point cell (because its training points have been already counted)
+				// also remove empty cells
+				this.overlaps.removeIf(cell -> (cell.equals(qcell) || !this.cell_tpoints.containsKey(cell)));
+
+				// count total training points from overlaps
 				if (!this.overlaps.isEmpty())
 					for (String cell : this.overlaps)
-						overlaps_points += cell_tpoints.get(cell);
-
-				checkedCells.addAll(this.overlaps);
+						overlaps_points += this.cell_tpoints.get(cell);
 
 				R += 0.5 * ds; // increase radius by half ds
 
 				// if k neighbors found, run loop one more time and increase radius by the diagonal of a cell
-				if (overlaps_points >= this.K) {
+				if (overlaps_points + tpointsInQcell >= this.K) {
 					sentinel++;
 
 					if (!this.is3d) // 2d pythagorean
@@ -356,18 +351,13 @@ public final class GetOverlaps
 			else // 3d
 				r1 = (n > 0) ? Math.cbrt((double) this.K / n) * R : 1.2 * Math.cbrt(this.K) * R;
 
-			int overlaps_points = tpointsInQcell; // total number of training points in overlaps
-
-			// cells in this list have already contributed their training points
-			final HashSet<String> checkedCells = new HashSet<>();
-
-			checkedCells.add(qcell); // query point's cell training points have already been counted
-
 			int sentinel = 0; // loop control variable
 
 			// runs until it finds >=k tpoints, then once more
 			while (sentinel < 2)
 			{
+				int overlaps_points = 0; // total number of training points in overlaps
+
 				// draw circle/sphere and check for overlaps
 				if (!this.is3d) // 2d
 					rangeQuery(xq, yq, r1, this.root, "");
@@ -378,19 +368,15 @@ public final class GetOverlaps
 				// also remove empty cells
 				this.overlaps.removeIf(cell -> (cell.equals(qcell) || !this.cell_tpoints.containsKey(cell)));
 
-				// now find total training points from overlaps
+				// count total training points from overlaps
 				if (!this.overlaps.isEmpty())
-					for (String cell : this.overlaps) {
-						if (!checkedCells.contains(cell)) // exclude those already counted
-							overlaps_points += cell_tpoints.get(cell);
-
-						checkedCells.add(cell);
-					}
+					for (String cell : this.overlaps)
+						overlaps_points += this.cell_tpoints.get(cell);
 
 				r1 += 0.1 * r1; // increase radius by 10%
 
 				// if k neighbors found (first time only), run loop one more time and set r1 equal to the maximum distance from ipoint to all overlapped cells
-				if ((overlaps_points >= this.K) && (sentinel == 0)) {
+				if ((overlaps_points + tpointsInQcell >= this.K) && (sentinel == 0)) {
 					sentinel++;
 
 					double maxSqrDist = 0; // square of maximum distance found so far (ipoint to cell)
@@ -574,7 +560,7 @@ public final class GetOverlaps
 	}
 
 	// return surrounding cells of GD cell in integer form
-	private HashSet<Integer> surroundingCells (int cell, int n, HashSet<Integer> southRow, HashSet<Integer> northRow, HashSet<Integer> westColumn, HashSet<Integer> eastColumn, HashSet<Integer> bottomLevel, HashSet<Integer> topLevel) {
+	private HashSet<Integer> surroundingCells (int cell, HashSet<Integer> southRow, HashSet<Integer> northRow, HashSet<Integer> westColumn, HashSet<Integer> eastColumn, HashSet<Integer> bottomLevel, HashSet<Integer> topLevel) {
 		final HashSet<Integer> surCells = new HashSet<>();
 
 		if (!westColumn.contains(cell)) // excluding west column
@@ -582,21 +568,21 @@ public final class GetOverlaps
 		if (!eastColumn.contains(cell)) // excluding east column
 			surCells.add(cell + 1); // E
 		if (!southRow.contains(cell)) // excluding southRow
-			surCells.add(cell - n); // S
+			surCells.add(cell - this.N); // S
 		if (!northRow.contains(cell)) // excluding northRow
-			surCells.add(cell + n); // N
+			surCells.add(cell + this.N); // N
 		if (!southRow.contains(cell) && !westColumn.contains(cell)) // excluding south row and west column
-			surCells.add(cell - n - 1); // SW
+			surCells.add(cell - this.N - 1); // SW
 		if (!southRow.contains(cell) && !eastColumn.contains(cell)) // excluding south row and east column
-			surCells.add(cell - n + 1); // SE
+			surCells.add(cell - this.N + 1); // SE
 		if (!northRow.contains(cell) && !westColumn.contains(cell)) // excluding north row and west column
-			surCells.add(cell + n - 1); // NW
+			surCells.add(cell + this.N - 1); // NW
 		if (!northRow.contains(cell) && !eastColumn.contains(cell)) // excluding north row and east column
-			surCells.add(cell + n + 1); // NE
+			surCells.add(cell + this.N + 1); // NE
 
 		if (this.is3d) // 3d
 		{
-			final int zfloor = n * n;
+			final int zfloor = this.N * this.N;
 
 			if (!topLevel.contains(cell)) // excluding top level
 				surCells.add(cell + zfloor); // above
@@ -605,17 +591,17 @@ public final class GetOverlaps
 			if (!topLevel.contains(cell) && !eastColumn.contains(cell)) // excluding top level & east wall
 				surCells.add(cell + zfloor + 1);// above-east
 			if (!topLevel.contains(cell) && !northRow.contains(cell)) // excluding top level & north wall
-				surCells.add(cell + zfloor + n); // above-N
+				surCells.add(cell + zfloor + this.N); // above-N
 			if (!topLevel.contains(cell) && !southRow.contains(cell)) // excluding top level & south wall
-				surCells.add(cell + zfloor - n); // above-S
+				surCells.add(cell + zfloor - this.N); // above-S
 			if (!topLevel.contains(cell) && !southRow.contains(cell) && !westColumn.contains(cell)) // excluding top level & south wall & west wall
-				surCells.add(cell + zfloor - n - 1); // above-SW
+				surCells.add(cell + zfloor - this.N - 1); // above-SW
 			if (!topLevel.contains(cell) && !southRow.contains(cell) && !eastColumn.contains(cell)) // excluding top level & south wall & east wall
-				surCells.add(cell + zfloor - n + 1); // above-SE
+				surCells.add(cell + zfloor - this.N + 1); // above-SE
 			if (!topLevel.contains(cell) && !northRow.contains(cell) && !westColumn.contains(cell)) // excluding top level & north wall & west wall
-				surCells.add(cell + zfloor + n - 1); // above-NW
+				surCells.add(cell + zfloor + this.N - 1); // above-NW
 			if (!topLevel.contains(cell) && !northRow.contains(cell) && !eastColumn.contains(cell)) // excluding top level & north wall & east wall
-				surCells.add(cell + zfloor + n + 1); // above-NE
+				surCells.add(cell + zfloor + this.N + 1); // above-NE
 			if (!bottomLevel.contains(cell)) // excluding bottom level
 				surCells.add(cell - zfloor); // below
 			if (!bottomLevel.contains(cell) && !westColumn.contains(cell)) // excluding bottom level & west wall
@@ -623,17 +609,17 @@ public final class GetOverlaps
 			if (!bottomLevel.contains(cell) && !eastColumn.contains(cell)) // excluding bottom level & east wall
 				surCells.add(cell - zfloor + 1); // below-E
 			if (!bottomLevel.contains(cell) && !northRow.contains(cell)) // excluding bottom level & north wall
-				surCells.add(cell - zfloor + n); // below-N
+				surCells.add(cell - zfloor + this.N); // below-N
 			if (!bottomLevel.contains(cell) && !southRow.contains(cell)) // excluding bottom level & south wall
-				surCells.add(cell - zfloor - n); // below-S
+				surCells.add(cell - zfloor - this.N); // below-S
 			if (!bottomLevel.contains(cell) && !southRow.contains(cell) && !westColumn.contains(cell)) // excluding bottom level & south wall & west wall
-				surCells.add(cell - zfloor - n - 1); // below-SW
+				surCells.add(cell - zfloor - this.N - 1); // below-SW
 			if (!bottomLevel.contains(cell) && !southRow.contains(cell) && !eastColumn.contains(cell)) // excluding bottom level & south wall & east wall
-				surCells.add(cell - zfloor - n + 1); // below-SE
+				surCells.add(cell - zfloor - this.N + 1); // below-SE
 			if (!bottomLevel.contains(cell) && !northRow.contains(cell) && !westColumn.contains(cell)) // excluding bottom level & north wall & west wall
-				surCells.add(cell - zfloor + n - 1); // below-NW
+				surCells.add(cell - zfloor + this.N - 1); // below-NW
 			if (!bottomLevel.contains(cell) && !northRow.contains(cell) && !eastColumn.contains(cell)) // excluding bottom level & north wall & east wall
-				surCells.add(cell - zfloor + n + 1); // below-NE
+				surCells.add(cell - zfloor + this.N + 1); // below-NE
 		}
 
 		return surCells;
