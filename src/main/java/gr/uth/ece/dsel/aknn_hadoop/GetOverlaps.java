@@ -1,5 +1,6 @@
 package gr.uth.ece.dsel.aknn_hadoop;
 
+import gr.uth.ece.dsel.UtilityFunctions;
 import gr.uth.ece.dsel.common_classes.IdDist;
 import gr.uth.ece.dsel.common_classes.Node;
 import gr.uth.ece.dsel.common_classes.Point;
@@ -213,7 +214,7 @@ public final class GetOverlaps
 		}
 
 		// case 1: there are at least knn in this cell and circle/sphere with radius R is completely inside the cell
-		if (tpointsInQcell >= this.K && circleContainedInCell(xq, yq, zq, R, intQCell)) {
+		if (tpointsInQcell >= this.K && UtilityFunctions.circleContainedInCell(xq, yq, zq, R, intQCell, this.N, this.is3d)) {
 			// point goes straight to next phase
 			this.overlaps.add(qcell); // add qpoint cell
 		} else // case 2: not enough neighbors in query point cell or circle overlaps other cells
@@ -236,7 +237,7 @@ public final class GetOverlaps
 
 				// get new layer of surrounding cells
 				for (int cell : candidateOverlaps)
-					tempOverlaps.addAll(surroundingCells(cell, south_row, north_row, west_column, east_column, bottom_level, top_level));
+					tempOverlaps.addAll(UtilityFunctions.surroundingCells(cell, this.N, this.is3d, south_row, north_row, west_column, east_column, bottom_level, top_level));
 
 				candidateOverlaps.addAll(tempOverlaps);
 
@@ -249,21 +250,21 @@ public final class GetOverlaps
 					// proceed only if this cell contains any training points
 					if (this.cell_tpoints.containsKey(strCell)) {
 						// get cell's borders (xmin, xmax, ymin, ymax, zmin, zmax)
-						final double xmin = cellBorders(cell)[0];
-						final double xmax = cellBorders(cell)[1];
-						final double ymin = cellBorders(cell)[2];
-						final double ymax = cellBorders(cell)[3];
+						final double xmin = UtilityFunctions.cellBorders(cell, this.N, this.is3d)[0];
+						final double xmax = UtilityFunctions.cellBorders(cell, this.N, this.is3d)[1];
+						final double ymin = UtilityFunctions.cellBorders(cell, this.N, this.is3d)[2];
+						final double ymax = UtilityFunctions.cellBorders(cell, this.N, this.is3d)[3];
 
 						if (!this.is3d) // 2d
 						{
-							if (circleSquareIntersect(xq, yq, R, xmin, xmax, ymin, ymax))
+							if (UtilityFunctions.circleSquareIntersect(xq, yq, R, xmin, xmax, ymin, ymax))
 								this.overlaps.add(strCell);
 						} else // 3d
 						{
-							final double zmin = cellBorders(cell)[4];
-							final double zmax = cellBorders(cell)[5];
+							final double zmin = UtilityFunctions.cellBorders(cell, this.N, this.is3d)[4];
+							final double zmax = UtilityFunctions.cellBorders(cell, this.N, this.is3d)[5];
 
-							if (sphereCubeIntersect(xq, yq, zq, R, xmin, xmax, ymin, ymax, zmin, zmax))
+							if (UtilityFunctions.sphereCubeIntersect(xq, yq, zq, R, xmin, xmax, ymin, ymax, zmin, zmax))
 								this.overlaps.add(strCell);
 						}
 					}
@@ -319,7 +320,7 @@ public final class GetOverlaps
 		double R = !this.neighbors.isEmpty() ? this.neighbors.peek().getDist() : 0.5 * ds;
 
 		// case 1: there are at least knn in this cell and circle/sphere with radius R is completely inside the cell
-		if (tpointsInQcell >= this.K && circleContainedInCell(xq, yq, zq, R, qcell)) {
+		if (tpointsInQcell >= this.K && UtilityFunctions.circleContainedInCell(xq, yq, zq, R, qcell, this.is3d)) {
 			// point goes straight to next phase
 			this.overlaps.add(qcell); // add qpoint cell
 		} else // case 2: not enough neighbors in query point cell or circle overlaps other cells
@@ -384,12 +385,12 @@ public final class GetOverlaps
 					for (String cell : this.overlaps) // for every cell in overlaps
 					{
 						// get cell's borders
-						final double xmin = cellBorders(cell)[0];
-						final double xmax = cellBorders(cell)[1];
-						final double ymin = cellBorders(cell)[2];
-						final double ymax = cellBorders(cell)[3];
-						final double zmin = cellBorders(cell)[4];
-						final double zmax = cellBorders(cell)[5];
+						final double xmin = UtilityFunctions.cellBorders(cell, this.is3d)[0];
+						final double xmax = UtilityFunctions.cellBorders(cell, this.is3d)[1];
+						final double ymin = UtilityFunctions.cellBorders(cell, this.is3d)[2];
+						final double ymax = UtilityFunctions.cellBorders(cell, this.is3d)[3];
+						final double zmin = UtilityFunctions.cellBorders(cell, this.is3d)[4];
+						final double zmax = UtilityFunctions.cellBorders(cell, this.is3d)[5];
 
 						// maximum ipoint distance from cell in x-direction
 						final double maxX = Math.max(Math.abs(xq - xmin), Math.abs(xq - xmax));
@@ -425,23 +426,18 @@ public final class GetOverlaps
 
 			// internal node
 		else {
-			if (intersect(x, y, r, node.getNW()))
+			if (UtilityFunctions.intersect(x, y, r, node.getNW()))
 				rangeQuery(x, y, r, node.getNW(), address + "0");
 
-			if (intersect(x, y, r, node.getNE()))
+			if (UtilityFunctions.intersect(x, y, r, node.getNE()))
 				rangeQuery(x, y, r, node.getNE(), address + "1");
 
-			if (intersect(x, y, r, node.getSW()))
+			if (UtilityFunctions.intersect(x, y, r, node.getSW()))
 				rangeQuery(x, y, r, node.getSW(), address + "2");
 
-			if (intersect(x, y, r, node.getSE()))
+			if (UtilityFunctions.intersect(x, y, r, node.getSE()))
 				rangeQuery(x, y, r, node.getSE(), address + "3");
 		}
-	}
-
-	// 2d quadtree intersect
-	private boolean intersect (double x, double y, double r, Node node) {
-		return circleSquareIntersect(x, y, r, node.getXmin(), node.getXmax(), node.getYmin(), node.getYmax());
 	}
 
 	// 3d quadtree range query
@@ -450,317 +446,29 @@ public final class GetOverlaps
 			this.overlaps.add(address);
 			// internal node
 		else {
-			if (intersect(x, y, z, r, node.getFNW()))
+			if (UtilityFunctions.intersect(x, y, z, r, node.getFNW()))
 				rangeQuery(x, y, z, r, node.getFNW(), address + "0");
 
-			if (intersect(x, y, z, r, node.getFNE()))
+			if (UtilityFunctions.intersect(x, y, z, r, node.getFNE()))
 				rangeQuery(x, y, z, r, node.getFNE(), address + "1");
 
-			if (intersect(x, y, z, r, node.getFSW()))
+			if (UtilityFunctions.intersect(x, y, z, r, node.getFSW()))
 				rangeQuery(x, y, z, r, node.getFSW(), address + "2");
 
-			if (intersect(x, y, z, r, node.getFSE()))
+			if (UtilityFunctions.intersect(x, y, z, r, node.getFSE()))
 				rangeQuery(x, y, z, r, node.getFSE(), address + "3");
 
-			if (intersect(x, y, z, r, node.getCNW()))
+			if (UtilityFunctions.intersect(x, y, z, r, node.getCNW()))
 				rangeQuery(x, y, z, r, node.getCNW(), address + "4");
 
-			if (intersect(x, y, z, r, node.getCNE()))
+			if (UtilityFunctions.intersect(x, y, z, r, node.getCNE()))
 				rangeQuery(x, y, z, r, node.getCNE(), address + "5");
 
-			if (intersect(x, y, z, r, node.getCSW()))
+			if (UtilityFunctions.intersect(x, y, z, r, node.getCSW()))
 				rangeQuery(x, y, z, r, node.getCSW(), address + "6");
 
-			if (intersect(x, y, z, r, node.getCSE()))
+			if (UtilityFunctions.intersect(x, y, z, r, node.getCSE()))
 				rangeQuery(x, y, z, r, node.getCSE(), address + "7");
 		}
-	}
-
-	// 3d quadtree intersect
-	private boolean intersect (double x, double y, double z, double r, Node node) {
-		return sphereCubeIntersect(x, y, z, r, node.getXmin(), node.getXmax(), node.getYmin(), node.getYmax(), node.getZmin(), node.getZmax());
-	}
-
-	// 2d circle - square intersection check
-	private boolean circleSquareIntersect (double x, double y, double r, double xmin, double xmax, double ymin, double ymax) {
-		// if point is inside cell return true
-		if (x >= xmin && x <= xmax && y >= ymin && y <= ymax)
-			return true;
-
-		// check circle - cell collision
-		final double ds = xmax - xmin; // cell's width
-
-		// get cell center coordinates
-		final double xc = (xmin + xmax) / 2;
-		final double yc = (ymin + ymax) / 2;
-
-		// circle center to cell center distance
-		final double centers_dist_x = Math.abs(x - xc);
-		final double centers_dist_y = Math.abs(y - yc);
-
-		// if centers are far in either direction, return false
-		if (centers_dist_x > r + ds / 2)
-			return false;
-		if (centers_dist_y > r + ds / 2)
-			return false;
-
-		// if control reaches here, centers are close enough
-
-		// the next two cases mean that circle center is within a stripe of width r around the square
-		if (centers_dist_x < ds / 2)
-			return true;
-		if (centers_dist_y < ds / 2)
-			return true;
-
-		// else check the corner distance
-		final double corner_dist_sq = (centers_dist_x - ds / 2)*(centers_dist_x - ds / 2) + (centers_dist_y - ds / 2)*(centers_dist_y - ds / 2);
-
-		return corner_dist_sq <= r * r;
-	}
-
-	// 3d sphere - cube intersection check
-	private boolean sphereCubeIntersect (double x, double y, double z, double r, double xmin, double xmax, double ymin, double ymax, double zmin, double zmax) {
-		// if point is inside cell return true
-		if (x >= xmin && x <= xmax && y >= ymin && y <= ymax && z >= zmin && z <= zmax)
-			return true;
-
-		// check sphere - cell collision
-		final double ds = xmax - xmin; // cell's width
-		// get cell center coordinates
-		final double xc = (xmin + xmax) / 2;
-		final double yc = (ymin + ymax) / 2;
-		final double zc = (zmin + zmax) / 2;
-		// sphere center to cell center distance
-		final double centers_dist_x = Math.abs(x - xc);
-		final double centers_dist_y = Math.abs(y - yc);
-		final double centers_dist_z = Math.abs(z - zc);
-
-		// if centers are far in either direction, return false
-		if (centers_dist_x > r + ds / 2)
-			return false;
-		if (centers_dist_y > r + ds / 2)
-			return false;
-		if (centers_dist_z > r + ds / 2)
-			return false;
-
-		// if control reaches here, centers are close enough
-
-		// the next three cases mean that sphere center is within a stripe of width r around the cell
-		if (centers_dist_x < ds / 2)
-			return true;
-		if (centers_dist_y < ds / 2)
-			return true;
-		if (centers_dist_z < ds / 2)
-			return true;
-
-		// else check the corner distance
-		final double corner_dist_sq = Math.pow(centers_dist_x - ds / 2, 2) + Math.pow(centers_dist_y - ds / 2, 2) + Math.pow(centers_dist_z - ds / 2, 2);
-
-		return corner_dist_sq <= r * r;
-	}
-
-	// return surrounding cells of GD cell in integer form
-	private HashSet<Integer> surroundingCells (int cell, HashSet<Integer> southRow, HashSet<Integer> northRow, HashSet<Integer> westColumn, HashSet<Integer> eastColumn, HashSet<Integer> bottomLevel, HashSet<Integer> topLevel) {
-		final HashSet<Integer> surCells = new HashSet<>();
-
-		if (!westColumn.contains(cell)) // excluding west column
-			surCells.add(cell - 1); // W
-		if (!eastColumn.contains(cell)) // excluding east column
-			surCells.add(cell + 1); // E
-		if (!southRow.contains(cell)) // excluding southRow
-			surCells.add(cell - this.N); // S
-		if (!northRow.contains(cell)) // excluding northRow
-			surCells.add(cell + this.N); // N
-		if (!southRow.contains(cell) && !westColumn.contains(cell)) // excluding south row and west column
-			surCells.add(cell - this.N - 1); // SW
-		if (!southRow.contains(cell) && !eastColumn.contains(cell)) // excluding south row and east column
-			surCells.add(cell - this.N + 1); // SE
-		if (!northRow.contains(cell) && !westColumn.contains(cell)) // excluding north row and west column
-			surCells.add(cell + this.N - 1); // NW
-		if (!northRow.contains(cell) && !eastColumn.contains(cell)) // excluding north row and east column
-			surCells.add(cell + this.N + 1); // NE
-
-		if (this.is3d) // 3d
-		{
-			final int zfloor = this.N * this.N;
-
-			if (!topLevel.contains(cell)) // excluding top level
-				surCells.add(cell + zfloor); // above
-			if (!topLevel.contains(cell) && !westColumn.contains(cell)) // excluding top level & west wall
-				surCells.add(cell + zfloor - 1); // above-west
-			if (!topLevel.contains(cell) && !eastColumn.contains(cell)) // excluding top level & east wall
-				surCells.add(cell + zfloor + 1);// above-east
-			if (!topLevel.contains(cell) && !northRow.contains(cell)) // excluding top level & north wall
-				surCells.add(cell + zfloor + this.N); // above-N
-			if (!topLevel.contains(cell) && !southRow.contains(cell)) // excluding top level & south wall
-				surCells.add(cell + zfloor - this.N); // above-S
-			if (!topLevel.contains(cell) && !southRow.contains(cell) && !westColumn.contains(cell)) // excluding top level & south wall & west wall
-				surCells.add(cell + zfloor - this.N - 1); // above-SW
-			if (!topLevel.contains(cell) && !southRow.contains(cell) && !eastColumn.contains(cell)) // excluding top level & south wall & east wall
-				surCells.add(cell + zfloor - this.N + 1); // above-SE
-			if (!topLevel.contains(cell) && !northRow.contains(cell) && !westColumn.contains(cell)) // excluding top level & north wall & west wall
-				surCells.add(cell + zfloor + this.N - 1); // above-NW
-			if (!topLevel.contains(cell) && !northRow.contains(cell) && !eastColumn.contains(cell)) // excluding top level & north wall & east wall
-				surCells.add(cell + zfloor + this.N + 1); // above-NE
-			if (!bottomLevel.contains(cell)) // excluding bottom level
-				surCells.add(cell - zfloor); // below
-			if (!bottomLevel.contains(cell) && !westColumn.contains(cell)) // excluding bottom level & west wall
-				surCells.add(cell - zfloor - 1); // below-W
-			if (!bottomLevel.contains(cell) && !eastColumn.contains(cell)) // excluding bottom level & east wall
-				surCells.add(cell - zfloor + 1); // below-E
-			if (!bottomLevel.contains(cell) && !northRow.contains(cell)) // excluding bottom level & north wall
-				surCells.add(cell - zfloor + this.N); // below-N
-			if (!bottomLevel.contains(cell) && !southRow.contains(cell)) // excluding bottom level & south wall
-				surCells.add(cell - zfloor - this.N); // below-S
-			if (!bottomLevel.contains(cell) && !southRow.contains(cell) && !westColumn.contains(cell)) // excluding bottom level & south wall & west wall
-				surCells.add(cell - zfloor - this.N - 1); // below-SW
-			if (!bottomLevel.contains(cell) && !southRow.contains(cell) && !eastColumn.contains(cell)) // excluding bottom level & south wall & east wall
-				surCells.add(cell - zfloor - this.N + 1); // below-SE
-			if (!bottomLevel.contains(cell) && !northRow.contains(cell) && !westColumn.contains(cell)) // excluding bottom level & north wall & west wall
-				surCells.add(cell - zfloor + this.N - 1); // below-NW
-			if (!bottomLevel.contains(cell) && !northRow.contains(cell) && !eastColumn.contains(cell)) // excluding bottom level & north wall & east wall
-				surCells.add(cell - zfloor + this.N + 1); // below-NE
-		}
-
-		return surCells;
-	}
-
-	// get min & max x, y, z of GD cell in integer form
-	private double[] cellBorders (int cell) {
-		final double[] borders = new double[6];
-
-		final int i = cellIJK(cell)[0];
-		final int j = cellIJK(cell)[1];
-		final int k = cellIJK(cell)[2];
-
-		final double ds = 1.0 / this.N;
-
-		borders[0] = i * ds; // xmin
-		borders[1] = (i + 1) * ds; // xmax
-		borders[2] = j * ds; // ymin
-		borders[3] = (j + 1) * ds; // ymax
-		borders[4] = this.is3d ? k * ds : Double.NEGATIVE_INFINITY; // zmin
-		borders[5] = this.is3d ? (k + 1) * ds : Double.NEGATIVE_INFINITY; // zmax
-
-		return borders;
-	}
-
-	// get min & max x, y, z of QT cell in string form
-	private double[] cellBorders (String cell) {
-
-		double xmin = 0; // cell's floor-south-west corner coords initialization
-		double ymin = 0;
-		double zmin = this.is3d ? 0 : Double.NEGATIVE_INFINITY;
-
-		for (int i = 0; i < cell.length(); i++) // check cellname's digits
-		{
-			switch(cell.charAt(i)) {
-				case '0': // 2d / 3d
-					ymin += 1.0 / Math.pow(2, i + 1); // if digit = 0 increase y0
-					break;
-				case '1': // 2d / 3d
-					xmin += 1.0 / Math.pow(2, i + 1); // if digit = 1 increase x0
-					ymin += 1.0 / Math.pow(2, i + 1); // and y0
-					break;
-				case '3': // 2d / 3d
-					xmin += 1.0 / Math.pow(2, i + 1); // if digit = 3 increase x0
-					break;
-				case '4': // 3d only
-					ymin += 1.0 / Math.pow(2, i + 1); // if digit = 4 increase y0
-					zmin += 1.0 / Math.pow(2, i + 1); // and z0
-					break;
-				case '5': // 3d only
-					xmin += 1.0 / Math.pow(2, i + 1); // if digit = 5 increase x0
-					ymin += 1.0 / Math.pow(2, i + 1); // and y0
-					zmin += 1.0 / Math.pow(2, i + 1); // and z0
-					break;
-				case '6':
-					zmin += 1.0 / Math.pow(2, i + 1); // if digit = 6 increase z0
-					break;
-				case '7': // 3d only
-					xmin += 1.0 / Math.pow(2, i + 1); // if digit = 7 increase x0
-					zmin += 1.0 / Math.pow(2, i + 1); // and z0
-					break;
-			}
-		}
-
-		final double ds = 1.0 / Math.pow(2, cell.length()); // cell side length
-
-		final double xmax = xmin + ds;
-		final double ymax = ymin + ds;
-		final double zmax = zmin + ds;
-
-		/*
-		 * cell's lower left corner: xmin, ymin
-		 *        upper left corner: xmin, ymax
-		 *        upper right corner: xmax, ymax
-		 *        lower right corner: xmax, ymin
-		 *
-		 */
-
-		return new double[]{xmin, xmax, ymin, ymax, zmin, zmax};
-	}
-
-	// get GD cell's i, j, k
-	private int[] cellIJK (int cell) {
-		final int iq = cell % this.N; // get i (2d/3d)
-		final int jq = !this.is3d ? (cell - iq) / this.N : ((cell - iq) / this.N) % this.N; // get j (2d/3d)
-		final int kq = !this.is3d ? Integer.MIN_VALUE : ((cell - iq) / this.N - jq) / this.N; // get k (3d only)
-
-		return new int[]{iq, jq, kq};
-	}
-
-	// return true if circle/sphere (x, y, z, r) is completely inside GD cell
-	private boolean circleContainedInCell (double x, double y, double z, double r, int cell) {
-		// get cell's borders (xmin, xmax, ymin, ymax, zmin, zmax)
-		final double xmin = cellBorders(cell)[0];
-		final double xmax = cellBorders(cell)[1];
-		final double ymin = cellBorders(cell)[2];
-		final double ymax = cellBorders(cell)[3];
-		final double zmin = cellBorders(cell)[4];
-		final double zmax = cellBorders(cell)[5];
-
-		// if r > distance of center to cell borders, circle is not completely inside cell
-		if (r > Math.abs(x - xmin))
-			return false;
-		if (r > Math.abs(x - xmax))
-			return false;
-		if (r > Math.abs(y - ymin))
-			return false;
-		if (r > Math.abs(y - ymax))
-			return false;
-		if (this.is3d && r > Math.abs(z - zmin))
-			return false;
-		if (this.is3d && r > Math.abs(z - zmax))
-			return false;
-
-		return true;
-	}
-
-	// return true if circle/sphere (x, y, z, r) is completely inside QT cell
-	private boolean circleContainedInCell (double x, double y, double z, double r, String cell) {
-		// get cell's borders (xmin, xmax, ymin, ymax, zmin, zmax)
-		final double xmin = cellBorders(cell)[0];
-		final double xmax = cellBorders(cell)[1];
-		final double ymin = cellBorders(cell)[2];
-		final double ymax = cellBorders(cell)[3];
-		final double zmin = cellBorders(cell)[4];
-		final double zmax = cellBorders(cell)[5];
-
-		// if r > distance of center to cell borders, circle is not completely inside cell
-		if (r > Math.abs(x - xmin))
-			return false;
-		if (r > Math.abs(x - xmax))
-			return false;
-		if (r > Math.abs(y - ymin))
-			return false;
-		if (r > Math.abs(y - ymax))
-			return false;
-		if (this.is3d && r > Math.abs(z - zmin))
-			return false;
-		if (this.is3d && r > Math.abs(z - zmax))
-			return false;
-
-		return true;
 	}
 }
