@@ -22,28 +22,33 @@ public final class GetOverlaps
 	private PriorityQueue<IdDist> neighbors;
 	private boolean is3d = false; // false = 2d, true = 3d
 
-	public GetOverlaps (HashMap<String, Integer> cell_tpoints, int k, String partitioning) {
+	public GetOverlaps (HashMap<String, Integer> cell_tpoints, int k, String partitioning)
+	{
 		this.cell_tpoints = new HashMap<>(cell_tpoints);
 		this.K = k;
 		this.partitioning = partitioning;
 		this.overlaps = new HashSet<>();
 	}
 
-	public void initializeFields (Point qp, String qc, PriorityQueue<IdDist> phase2neighbors) {
+	public void initializeFields (Point qp, String qc, PriorityQueue<IdDist> phase2neighbors)
+	{
 		this.qpoint = qp;
 		this.qcell = qc;
 		this.neighbors = new PriorityQueue<>(phase2neighbors);
 	}
 
-	public void setN (int n) {
+	public void setN (int n)
+	{
 		this.N = n;
 	}
 
-	public void setRoot (Node root) {
+	public void setRoot (Node root)
+	{
 		this.root = root;
 	}
 
-	public HashSet<String> getOverlaps() {
+	public HashSet<String> getOverlaps()
+	{
 		this.overlaps.clear();
 
 		// set 2d as default
@@ -59,7 +64,8 @@ public final class GetOverlaps
 	}
 
 	// find grid overlaps
-	private void getOverlapsGD (String qcell, Point qpoint) {
+	private void getOverlapsGD (String qcell, Point qpoint)
+	{
 
         /*
 		Cell array (numbers inside cells are cell_id)
@@ -217,8 +223,9 @@ public final class GetOverlaps
 		// case 1: there are at least knn in this cell and circle/sphere with radius R is completely inside the query cell
 		boolean case1 = false;
 
-		if (tpointsInQcell >= this.K) {
-			double[] borders = UtilityFunctions.cellBorders(intQCell, tpointsInQcell, is3d);
+		if (tpointsInQcell >= this.K)
+		{
+			double[] borders = UtilityFunctions.cellBorders(intQCell, tpointsInQcell, this.is3d);
 
 			final double xmin = borders[0];
 			final double xmax = borders[1];
@@ -240,10 +247,10 @@ public final class GetOverlaps
 			}
 			if (case1) // point goes straight to next phase
 				this.overlaps.add(qcell); // add qpoint cell
-		} else // case 2: not enough neighbors in query point cell or circle overlaps other cells
+		}
+		// case 2: not enough neighbors in query point cell or circle overlaps other cells
+		else
 		{
-			//int overlaps_points = tpointsInQcell; // total number of training points in overlaps
-
 			int sentinel = 0; // loop control variable
 
 			// list of possible overlaps with circle
@@ -255,7 +262,8 @@ public final class GetOverlaps
 			final HashSet<Integer> tempOverlaps = new HashSet<>();
 
 			// runs until it finds >=k tpoints, then once more
-			while (sentinel < 2) {
+			while (sentinel < 2)
+			{
 				int overlaps_points = 0; // total number of training points in overlaps
 
 				// get new layer of surrounding cells
@@ -267,27 +275,31 @@ public final class GetOverlaps
 				tempOverlaps.clear();
 
 				// check each cell in list if overlaps with circle/sphere
-				for (int cell : candidateOverlaps) {
+				for (int cell : candidateOverlaps)
+				{
 					final String strCell = String.valueOf(cell);
 
 					// proceed only if this cell contains any training points
 					// and skip query point cell
-					if (cell != intQCell && this.cell_tpoints.containsKey(strCell)) {
+					if (cell != intQCell && this.cell_tpoints.containsKey(strCell))
+					{
 						// get cell's borders (xmin, xmax, ymin, ymax, zmin, zmax)
 						final double[] borders = UtilityFunctions.cellBorders(cell, this.N, this.is3d);
 						final double xmin = borders[0];
 						final double xmax = borders[1];
 						final double ymin = borders[2];
 						final double ymax = borders[3];
-						final double zmin = borders[4];
-						final double zmax = borders[5];
 
 						if (!this.is3d) // 2d
 						{
 							if (UtilityFunctions.circleSquareIntersect(xq, yq, R, xmin, xmax, ymin, ymax))
 								this.overlaps.add(strCell);
-						} else // 3d
+						}
+						else // 3d
 						{
+							final double zmin = borders[4];
+							final double zmax = borders[5];
+
 							if (UtilityFunctions.sphereCubeIntersect(xq, yq, zq, R, xmin, xmax, ymin, ymax, zmin, zmax))
 								this.overlaps.add(strCell);
 						}
@@ -306,7 +318,8 @@ public final class GetOverlaps
 				R += 0.5 * ds; // increase radius by half ds
 
 				// if k neighbors found, run loop one more time and increase radius by the diagonal of a cell
-				if (overlaps_points + tpointsInQcell >= this.K) {
+				if (overlaps_points + tpointsInQcell >= this.K)
+				{
 					sentinel++;
 
 					if (!this.is3d) // 2d pythagorean
@@ -319,7 +332,8 @@ public final class GetOverlaps
 	} // end getOverlapsGD
 
 	// find quadtree overlaps
-	private void getOverlapsQT (String qcell, Point qpoint) {
+	private void getOverlapsQT (String qcell, Point qpoint)
+	{
 		// read query point coordinates and neighbors list
 		final double xq = qpoint.getX();
 		final double yq = qpoint.getY();
@@ -346,7 +360,8 @@ public final class GetOverlaps
 		// case 1: there are at least knn in this cell and circle/sphere with radius R is completely inside the cell
 		boolean case1 = false;
 
-		if (tpointsInQcell >= this.K) {
+		if (tpointsInQcell >= this.K)
+		{
 			double[] borders = UtilityFunctions.cellBorders(qcell);
 
 			final double xmin = borders[0];
@@ -369,7 +384,9 @@ public final class GetOverlaps
 			}
 			if (case1) // point goes straight to next phase
 				this.overlaps.add(qcell); // add qpoint cell
-		} else // case 2: not enough neighbors in query point cell or circle overlaps other cells
+		}
+		// case 2: not enough neighbors in query point cell or circle overlaps other cells
+		else
 		{
 			/* Define a new increasing radius r1:
 			 * - if there are already x < k neighbors in this cell, we suppose a constant density of training points, so
@@ -469,12 +486,15 @@ public final class GetOverlaps
 	} // end getOverlapsQT
 
 	// 2d quadtree range query
-	private void rangeQuery (double x, double y, double r, Node node, String address) {
-		if (node.getNW() == null) // leaf node
+	private void rangeQuery (double x, double y, double r, Node node, String address)
+	{
+		// leaf node
+		if (node.getNW() == null)
 			this.overlaps.add(address);
 
-			// internal node
-		else {
+		// internal node
+		else
+		{
 			if (UtilityFunctions.intersect(x, y, r, node.getNW()))
 				rangeQuery(x, y, r, node.getNW(), address + "0");
 
@@ -490,11 +510,15 @@ public final class GetOverlaps
 	}
 
 	// 3d quadtree range query
-	private void rangeQuery (double x, double y, double z, double r, Node node, String address) {
-		if (node.getFNW() == null) // leaf node
+	private void rangeQuery (double x, double y, double z, double r, Node node, String address)
+	{
+		// leaf node
+		if (node.getFNW() == null)
 			this.overlaps.add(address);
-			// internal node
-		else {
+
+		// internal node
+		else
+		{
 			if (UtilityFunctions.intersect(x, y, z, r, node.getFNW()))
 				rangeQuery(x, y, z, r, node.getFNW(), address + "0");
 
