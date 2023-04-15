@@ -213,10 +213,33 @@ public final class GetOverlaps
 			}
 		}
 
-		// case 1: there are at least knn in this cell and circle/sphere with radius R is completely inside the cell
-		if (tpointsInQcell >= this.K && UtilityFunctions.circleContainedInCell(xq, yq, zq, R, intQCell, this.N, this.is3d)) {
-			// point goes straight to next phase
-			this.overlaps.add(qcell); // add qpoint cell
+
+		// case 1: there are at least knn in this cell and circle/sphere with radius R is completely inside the query cell
+		boolean case1 = false;
+
+		if (tpointsInQcell >= this.K) {
+			double[] borders = UtilityFunctions.cellBorders(intQCell, tpointsInQcell, is3d);
+
+			final double xmin = borders[0];
+			final double xmax = borders[1];
+			final double ymin = borders[2];
+			final double ymax = borders[3];
+
+			if (borders.length == 4) // 2d
+			{
+				if (UtilityFunctions.circleInsideCell(xq, yq, R, xmin, xmax, ymin, ymax))
+					case1 = true;
+			}
+			else if (borders.length == 6) // 3d
+			{
+				final double zmin = borders[4];
+				final double zmax = borders[5];
+
+				if (UtilityFunctions.circleInsideCell(xq, yq, zq, R, xmin, xmax, ymin, ymax, zmin, zmax))
+					case1 = true;
+			}
+			if (case1) // point goes straight to next phase
+				this.overlaps.add(qcell); // add qpoint cell
 		} else // case 2: not enough neighbors in query point cell or circle overlaps other cells
 		{
 			//int overlaps_points = tpointsInQcell; // total number of training points in overlaps
@@ -248,12 +271,16 @@ public final class GetOverlaps
 					final String strCell = String.valueOf(cell);
 
 					// proceed only if this cell contains any training points
-					if (this.cell_tpoints.containsKey(strCell)) {
+					// and skip query point cell
+					if (cell != intQCell && this.cell_tpoints.containsKey(strCell)) {
 						// get cell's borders (xmin, xmax, ymin, ymax, zmin, zmax)
-						final double xmin = UtilityFunctions.cellBorders(cell, this.N, this.is3d)[0];
-						final double xmax = UtilityFunctions.cellBorders(cell, this.N, this.is3d)[1];
-						final double ymin = UtilityFunctions.cellBorders(cell, this.N, this.is3d)[2];
-						final double ymax = UtilityFunctions.cellBorders(cell, this.N, this.is3d)[3];
+						final double[] borders = UtilityFunctions.cellBorders(cell, this.N, this.is3d);
+						final double xmin = borders[0];
+						final double xmax = borders[1];
+						final double ymin = borders[2];
+						final double ymax = borders[3];
+						final double zmin = borders[4];
+						final double zmax = borders[5];
 
 						if (!this.is3d) // 2d
 						{
@@ -261,9 +288,6 @@ public final class GetOverlaps
 								this.overlaps.add(strCell);
 						} else // 3d
 						{
-							final double zmin = UtilityFunctions.cellBorders(cell, this.N, this.is3d)[4];
-							final double zmax = UtilityFunctions.cellBorders(cell, this.N, this.is3d)[5];
-
 							if (UtilityFunctions.sphereCubeIntersect(xq, yq, zq, R, xmin, xmax, ymin, ymax, zmin, zmax))
 								this.overlaps.add(strCell);
 						}
@@ -320,9 +344,31 @@ public final class GetOverlaps
 		double R = !this.neighbors.isEmpty() ? this.neighbors.peek().getDist() : 0.5 * ds;
 
 		// case 1: there are at least knn in this cell and circle/sphere with radius R is completely inside the cell
-		if (tpointsInQcell >= this.K && UtilityFunctions.circleContainedInCell(xq, yq, zq, R, qcell, this.is3d)) {
-			// point goes straight to next phase
-			this.overlaps.add(qcell); // add qpoint cell
+		boolean case1 = false;
+
+		if (tpointsInQcell >= this.K) {
+			double[] borders = UtilityFunctions.cellBorders(qcell);
+
+			final double xmin = borders[0];
+			final double xmax = borders[1];
+			final double ymin = borders[2];
+			final double ymax = borders[3];
+
+			if (borders.length == 4) // 2d
+			{
+				if (UtilityFunctions.circleInsideCell(xq, yq, R, xmin, xmax, ymin, ymax))
+					case1 = true;
+			}
+			else if (borders.length == 6) // 3d
+			{
+				final double zmin = borders[4];
+				final double zmax = borders[5];
+
+				if (UtilityFunctions.circleInsideCell(xq, yq, zq, R, xmin, xmax, ymin, ymax, zmin, zmax))
+					case1 = true;
+			}
+			if (case1) // point goes straight to next phase
+				this.overlaps.add(qcell); // add qpoint cell
 		} else // case 2: not enough neighbors in query point cell or circle overlaps other cells
 		{
 			/* Define a new increasing radius r1:
@@ -358,6 +404,7 @@ public final class GetOverlaps
 			while (sentinel < 2)
 			{
 				int overlaps_points = 0; // total number of training points in overlaps
+				this.overlaps.clear(); // clear overlaps list
 
 				// draw circle/sphere and check for overlaps
 				if (!this.is3d) // 2d
@@ -385,12 +432,11 @@ public final class GetOverlaps
 					for (String cell : this.overlaps) // for every cell in overlaps
 					{
 						// get cell's borders
-						final double xmin = UtilityFunctions.cellBorders(cell, this.is3d)[0];
-						final double xmax = UtilityFunctions.cellBorders(cell, this.is3d)[1];
-						final double ymin = UtilityFunctions.cellBorders(cell, this.is3d)[2];
-						final double ymax = UtilityFunctions.cellBorders(cell, this.is3d)[3];
-						final double zmin = UtilityFunctions.cellBorders(cell, this.is3d)[4];
-						final double zmax = UtilityFunctions.cellBorders(cell, this.is3d)[5];
+						final double[] borders = UtilityFunctions.cellBorders(cell);
+						final double xmin = borders[0];
+						final double xmax = borders[1];
+						final double ymin = borders[2];
+						final double ymax = borders[3];
 
 						// maximum ipoint distance from cell in x-direction
 						final double maxX = Math.max(Math.abs(xq - xmin), Math.abs(xq - xmax));
@@ -404,6 +450,9 @@ public final class GetOverlaps
 						}
 						else // 3d
 						{
+							final double zmin = borders[4];
+							final double zmax = borders[5];
+
 							// maximum ipoint distance from cell in z-direction
 							final double maxZ = Math.max(Math.abs(zq - zmin), Math.abs(zq - zmax));
 

@@ -332,32 +332,55 @@ public final class UtilityFunctions
 		return corner_dist_sq <= r * r;
 	}
 
+	// get GD cell's i, j, k
+	public static int[] cellIJK (int cell, int N, boolean is3d) {
+		final int i = cell % N; // 2d/3d
+		final int j = (cell - i) / N; // 2d
+		
+		if (is3d)
+		{
+			final int j3d = j % N;
+			final int k = ((cell - i) / N - j) / N;
+
+			return new int[]{i, j3d, k};
+		}
+
+		return new int[]{i, j};
+	}
+
 	// get min & max x, y, z of GD cell in integer form
 	public static double[] cellBorders (int cell, int N, boolean is3d) {
-		final double[] borders = new double[6];
-
-		final int i = cellIJK(cell, N, is3d)[0];
-		final int j = cellIJK(cell, N, is3d)[1];
-		final int k = cellIJK(cell, N, is3d)[2];
+		// get cell's i, j, k
+		final int[] ijk = cellIJK(cell, N, is3d);
+		final int i = ijk[0];
+		final int j = ijk[1];
 
 		final double ds = 1.0 / N;
 
-		borders[0] = i * ds; // xmin
-		borders[1] = (i + 1) * ds; // xmax
-		borders[2] = j * ds; // ymin
-		borders[3] = (j + 1) * ds; // ymax
-		borders[4] = is3d ? k * ds : Double.NEGATIVE_INFINITY; // zmin
-		borders[5] = is3d ? (k + 1) * ds : Double.NEGATIVE_INFINITY; // zmax
+		final double xmin = i * ds;
+		final double xmax = (i + 1) * ds;
+		final double ymin = j * ds;
+		final double ymax = (j + 1) * ds;
 
-		return borders;
+		if (is3d)
+		{
+			final int k = ijk[2];
+
+			final double zmin = k * ds;
+			final double zmax = (k + 1) * ds;
+
+			return new double[]{xmin, xmax, ymin, ymax, zmin, zmax};
+		}
+
+		return new double[]{xmin, xmax, ymin, ymax};
 	}
 
 	// get min & max x, y, z of QT cell in string form
-	public static double[] cellBorders (String cell, boolean is3d) {
+	public static double[] cellBorders (String cell) {
 
 		double xmin = 0; // cell's floor-south-west corner coords initialization
 		double ymin = 0;
-		double zmin = is3d ? 0 : Double.NEGATIVE_INFINITY;
+		double zmin = 0;
 
 		for (int i = 0; i < cell.length(); i++) // check cellname's digits
 		{
@@ -408,25 +431,8 @@ public final class UtilityFunctions
 		return new double[]{xmin, xmax, ymin, ymax, zmin, zmax};
 	}
 
-	// get GD cell's i, j, k
-	public static int[] cellIJK (int cell, int N, boolean is3d) {
-		final int iq = cell % N; // get i (2d/3d)
-		final int jq = !is3d ? (cell - iq) / N : ((cell - iq) / N) % N; // get j (2d/3d)
-		final int kq = !is3d ? Integer.MIN_VALUE : ((cell - iq) / N - jq) / N; // get k (3d only)
-
-		return new int[]{iq, jq, kq};
-	}
-
-	// return true if circle/sphere (x, y, z, r) is completely inside GD cell
-	public static boolean circleContainedInCell (double x, double y, double z, double r, int cell, int N, boolean is3d) {
-		// get cell's borders (xmin, xmax, ymin, ymax, zmin, zmax)
-		final double xmin = cellBorders(cell, N, is3d)[0];
-		final double xmax = cellBorders(cell, N, is3d)[1];
-		final double ymin = cellBorders(cell, N, is3d)[2];
-		final double ymax = cellBorders(cell, N, is3d)[3];
-		final double zmin = cellBorders(cell, N, is3d)[4];
-		final double zmax = cellBorders(cell, N, is3d)[5];
-
+	// return true if circle (x, y, r) is completely inside 2d cell (xmin, xmax, ymin, ymax)
+	public static boolean circleInsideCell (double x, double y, double r, double xmin, double xmax, double ymin, double ymax) {
 		// if r > distance of center to cell borders, circle is not completely inside cell
 		if (r > Math.abs(x - xmin))
 			return false;
@@ -435,26 +441,14 @@ public final class UtilityFunctions
 		if (r > Math.abs(y - ymin))
 			return false;
 		if (r > Math.abs(y - ymax))
-			return false;
-		if (is3d && r > Math.abs(z - zmin))
-			return false;
-		if (is3d && r > Math.abs(z - zmax))
 			return false;
 
 		return true;
 	}
 
-	// return true if circle/sphere (x, y, z, r) is completely inside QT cell
-	public static boolean circleContainedInCell (double x, double y, double z, double r, String cell, boolean is3d) {
-		// get cell's borders (xmin, xmax, ymin, ymax, zmin, zmax)
-		final double xmin = cellBorders(cell, is3d)[0];
-		final double xmax = cellBorders(cell, is3d)[1];
-		final double ymin = cellBorders(cell, is3d)[2];
-		final double ymax = cellBorders(cell, is3d)[3];
-		final double zmin = cellBorders(cell, is3d)[4];
-		final double zmax = cellBorders(cell, is3d)[5];
-
-		// if r > distance of center to cell borders, circle is not completely inside cell
+	// return true if sphere (x, y, z, r) is completely inside 3d cell (xmin, xmax, ymin, ymax, zmin, zmax)
+	public static boolean circleInsideCell (double x, double y, double z, double r, double xmin, double xmax, double ymin, double ymax, double zmin, double zmax) {
+		// if r > distance of center to cell borders, sphere is not completely inside cell
 		if (r > Math.abs(x - xmin))
 			return false;
 		if (r > Math.abs(x - xmax))
@@ -463,9 +457,9 @@ public final class UtilityFunctions
 			return false;
 		if (r > Math.abs(y - ymax))
 			return false;
-		if (is3d && r > Math.abs(z - zmin))
+		if (r > Math.abs(z - zmin))
 			return false;
-		if (is3d && r > Math.abs(z - zmax))
+		if (r > Math.abs(z - zmax))
 			return false;
 
 		return true;
