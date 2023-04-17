@@ -12,7 +12,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Random;
 
-import gr.uth.ece.dsel.common_classes.Node;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -478,7 +477,7 @@ public final class CreateQTree
 		// create 2d or 3d quad tree from sample dataset
 		if (!this.is3d) // 2d
 			root = new Node(0.0, 0.0, 1.0, 1.0); // create root node
-		else if (this.is3d) // 3d
+		else // 3d
 			root = new Node(0.0, 0.0, 0.0, 1.0, 1.0, 1.0); // create root node
 		
 		for (int i : this.sample_dataset.keySet()) // add all sample points to root node
@@ -505,7 +504,7 @@ public final class CreateQTree
 		// create 2d or 3d quad tree from sample dataset
 		if (!this.is3d) // 2d
 			root = new Node(0.0, 0.0, 1.0, 1.0); // create root node
-		else if (this.is3d) // 3d
+		else // 3d
 			root = new Node(0.0, 0.0, 0.0, 1.0, 1.0, 1.0); // create root node
 		
 		for (int i : this.sample_dataset.keySet()) // add all sample points to root node
@@ -532,7 +531,7 @@ public final class CreateQTree
 		// create 2d or 3d quad tree from sample dataset
 		if (!this.is3d) // 2d
 			root1 = new Node(0.0, 0.0, 1.0, 1.0); // create root node
-		else if (this.is3d) // 3d
+		else // 3d
 			root1 = new Node(0.0, 0.0, 0.0, 1.0, 1.0, 1.0); // create root node
 		
 		for (int i : this.sample_dataset.keySet()) // add all sample points to root node
@@ -557,7 +556,7 @@ public final class CreateQTree
 		// create 2d or 3d quad tree from sample dataset
 		if (!this.is3d) // 2d
 			root2 = new Node(0.0, 0.0, 1.0, 1.0); // create root node
-		else if (this.is3d) // 3d
+		else // 3d
 			root2 = new Node(0.0, 0.0, 0.0, 1.0, 1.0, 1.0); // create root node
 		
 		for (int i : this.sample_dataset.keySet()) // add all sample points to root node
