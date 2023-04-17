@@ -173,19 +173,19 @@ public final class GetOverlapsFunctions
 
 		if (tpointsInQcell >= K)
 		{
-			double[] borders = UtilityFunctions.cellBorders(intQCell, tpointsInQcell, is3d);
+			double[] borders = UtilityFunctions.cellBorders(intQCell, N, is3d);
 
 			final double xmin = borders[0];
 			final double xmax = borders[1];
 			final double ymin = borders[2];
 			final double ymax = borders[3];
 
-			if (borders.length == 4) // 2d
+			if (!is3d) // 2d
 			{
 				if (UtilityFunctions.circleInsideCell(xq, yq, R, xmin, xmax, ymin, ymax))
 					case1 = true;
 			}
-			else if (borders.length == 6) // 3d
+			else // 3d
 			{
 				final double zmin = borders[4];
 				final double zmax = borders[5];

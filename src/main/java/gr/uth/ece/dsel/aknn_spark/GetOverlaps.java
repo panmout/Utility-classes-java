@@ -10,7 +10,7 @@ import java.util.PriorityQueue;
 
 public final class GetOverlaps implements Function<Tuple2<String, ArrayList<Tuple2<Point, PriorityQueue<IdDist>>>>, ArrayList<Tuple2<String, Tuple2<Point, Boolean>>>>
 {
-	private final HashMap<String, Integer> cell_tpoints = new HashMap<>(); // hashmap of training points per cell list from Phase 1 <cell_id, number of training points>
+	private final HashMap<String, Integer> cell_tpoints; // hashmap of training points per cell list from Phase 1 <cell_id, number of training points>
 	private final String partitioning; // gd or qt
 	private int N; // N*N or N*N*N cells
 	private final int K; // K neighbors
@@ -19,17 +19,14 @@ public final class GetOverlaps implements Function<Tuple2<String, ArrayList<Tupl
 	private final PriorityQueue<IdDist> neighbors; // neighbors list
 	private final ArrayList<Tuple2<String, Tuple2<Point, Boolean>>> outValue; // output value: <overlapped cell, qpoint, true/false>
 	
-	public GetOverlaps (HashMap<String, Long> cell_tpoints, int k, String partitioning)
+	public GetOverlaps (HashMap<String, Integer> cell_tpoints, int k, String partitioning)
 	{
-		// convert HashMap<String, Long> to HashMap<String, Integer>
-		for (String cell : cell_tpoints.keySet())
-			this.cell_tpoints.put(cell, cell_tpoints.get(cell).intValue());
-
 		this.K = k;
 		this.partitioning = partitioning;
 		this.overlaps = new HashSet<>();
 		this.neighbors = new PriorityQueue<>(this.K, new IdDistComparator("max"));
 		this.outValue = new ArrayList<>();
+		this.cell_tpoints = cell_tpoints;
 	}
 	
 	public void setN (int n)
