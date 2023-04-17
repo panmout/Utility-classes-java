@@ -18,11 +18,11 @@ public final class FindNeighbors
 	
 	public PriorityQueue<IdDist> getBfNeighbors(Point qpoint)
 	{
-	    return FindNeighborsFunctions.getBfNeighbors(qpoint,this.tpoints, this.k);
+	    return FindNeighborsFunctions.getBfNeighbors(qpoint, this.tpoints, this.k);
 	}
 
 	public PriorityQueue<IdDist> getPsNeighbors(Point qpoint)
 	{
-	    return FindNeighborsFunctions.getPsNeighbors(qpoint,this.tpoints, this.k);
+	    return FindNeighborsFunctions.getPsNeighbors(qpoint, this.tpoints, this.k);
 	}
 }
