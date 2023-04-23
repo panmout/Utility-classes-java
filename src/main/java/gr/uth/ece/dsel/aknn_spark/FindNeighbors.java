@@ -9,52 +9,45 @@ import java.util.PriorityQueue;
 public final class FindNeighbors implements Function<Tuple2<Iterable<Point>, Iterable<Point>>, ArrayList<Tuple2<Point, PriorityQueue<IdDist>>>>
 {
     private final int k;
-	private final ArrayList<Point> qpoints;
-	private final ArrayList<Point> tpoints;
-	private final ArrayList<Tuple2<Point, PriorityQueue<IdDist>>> qpoint_neighbors;
     private final String method;
 	
 	public FindNeighbors(int k, String method)
 	{
 		this.k = k;
-		this.qpoint_neighbors = new ArrayList<>();
-		this.qpoints = new ArrayList<>();
-		this.tpoints = new ArrayList<>();
         this.method = method;
 	}
 
     @Override
 	public ArrayList<Tuple2<Point, PriorityQueue<IdDist>>> call (Tuple2<Iterable<Point>, Iterable<Point>> tuple)
 	{
-        this.qpoint_neighbors.clear();
-        this.qpoints.clear();
-		this.tpoints.clear();
+        final ArrayList<Point> qpoints = new ArrayList<>();
+        final ArrayList<Point> tpoints = new ArrayList<>();
+        final ArrayList<Tuple2<Point, PriorityQueue<IdDist>>> qpoint_neighbors = new ArrayList<>();
 
         // convert iterable to ArrayList
-        tuple._1.forEach(this.qpoints::add);
-		tuple._2.forEach(this.tpoints::add);
+        tuple._1.forEach(qpoints::add);
+		tuple._2.forEach(tpoints::add);
 
-		PriorityQueue<IdDist> neighbors;
-
-        if (method.equals("ps"))
-        {	    
+        if (this.method.equals("ps"))
+        {
             // sort lists by x ascending
-            this.qpoints.sort(new PointXYComparator("min", 'x'));
-            this.tpoints.sort(new PointXYComparator("min", 'x'));
+            qpoints.sort(new PointXYComparator("min", 'x'));
+            tpoints.sort(new PointXYComparator("min", 'x'));
         }
 
+        final FindNeighborsFunctions fnf = new FindNeighborsFunctions();
+
         // traverse query points
-		for (Point qpoint: this.qpoints)
+		for (Point qpoint: qpoints)
         {
             // get neighbors
-            neighbors = FindNeighborsFunctions.getPsNeighbors(qpoint, tpoints, this.k);
-             
-            this.qpoint_neighbors.add(new Tuple2<>(qpoint, new PriorityQueue<>(neighbors)));
-
-            neighbors.clear();
-        } // end query points traverse
+            if (this.method.equals("bf"))
+                qpoint_neighbors.add(new Tuple2<>(qpoint, fnf.getBfNeighbors(qpoint, tpoints, this.k)));
+            else if (this.method.equals("ps"))
+                qpoint_neighbors.add(new Tuple2<>(qpoint, fnf.getPsNeighbors(qpoint, tpoints, this.k)));
+        }
         
         // return <list of qpoints with their neighbor list>
-       return new ArrayList<>(this.qpoint_neighbors);
+       return qpoint_neighbors;
     }
 }

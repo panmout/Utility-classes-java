@@ -121,7 +121,8 @@ public final class UtilityFunctions
 	k = {(cell-i)/n-j}/n
 	*/
 	
-	public static String pointToCellGD(Point p, int n)
+	// point to GD cell
+	public static String pointToCell(Point p, int n)
 	{
 		final double ds = 1.0 / n; // interval ds (cell width)
 		final double x = p.getX();  // p.x
@@ -144,20 +145,20 @@ public final class UtilityFunctions
 //	// node to cell
 //	public static final String nodeToCell(Node node)
 //	{
-//		return pointToCellQT((node.getXmin() + node.getXmax()) / 2, (node.getYmin() + node.getYmax()) / 2, node);
+//		return pointToCell((node.getXmin() + node.getXmax()) / 2, (node.getYmin() + node.getYmax()) / 2, node);
 //	}
 	
 	// point to QT cell
-	public static String pointToCellQT(Point p, Node node)
+	public static String pointToCell(Point p, Node node)
 	{
 		if (node.getCNE() == null) // 2d
-			return pointToCellQT(p.getX(), p.getY(), node);
+			return pointToCell(p.getX(), p.getY(), node);
 		else // 3d
-			return pointToCellQT(p.getX(), p.getY(), p.getZ(), node);
+			return pointToCell(p.getX(), p.getY(), p.getZ(), node);
 	}
 	
 	// point to QT cell 2d
-	public static String pointToCellQT (double x, double y, Node node)
+	public static String pointToCell (double x, double y, Node node)
 	{
 		// define x, y
 		double xmin = node.getXmin();
@@ -173,23 +174,23 @@ public final class UtilityFunctions
 			if (x >= xmin && x < xmid) // point inside SW or NW
 			{
 				if (y >= ymin && y < ymid) // point inside SW
-					return "2" + pointToCellQT(x, y, node.getSW());
+					return "2" + pointToCell(x, y, node.getSW());
 				else if (y >= ymid && y < ymax) // point inside NW
-					return "0" + pointToCellQT(x, y, node.getNW());
+					return "0" + pointToCell(x, y, node.getNW());
 			}
 			else if (x >= xmid && x < xmax) // point inside SE or NE
 			{
 				if (y >= ymin && y < ymid) // point inside SE
-					return "3" + pointToCellQT(x, y, node.getSE());
+					return "3" + pointToCell(x, y, node.getSE());
 				else if (y >= ymid && y < ymax) // point inside NE
-					return "1" + pointToCellQT(x, y, node.getNE());
+					return "1" + pointToCell(x, y, node.getNE());
 			}
 		}
 		return "";
 	}
 	
 	// point to QT cell 3d
-	public static String pointToCellQT (double x, double y, double z, Node node)
+	public static String pointToCell (double x, double y, double z, Node node)
 	{
 		// define x, y, z
 		double xmin = node.getXmin();
@@ -211,16 +212,16 @@ public final class UtilityFunctions
 				if (y >= ymin && y < ymid) // point inside SW (Floor or Ceiling)
 				{
 					if (z >= zmin && z < zmid) // point inside FSW
-						return "2" + pointToCellQT(x, y, z, node.getFSW());
+						return "2" + pointToCell(x, y, z, node.getFSW());
 					else if (z >= zmid && z < zmax) // point inside CSW
-						return "6" + pointToCellQT(x, y, z, node.getCSW());
+						return "6" + pointToCell(x, y, z, node.getCSW());
 				}
 				else if (y >= ymid && y < ymax) // point inside NW (Floor or Ceiling)
 				{
 					if (z >= zmin && z < zmid) // point inside FNW
-						return "0" + pointToCellQT(x, y, z, node.getFNW());
+						return "0" + pointToCell(x, y, z, node.getFNW());
 					else if (z >= zmid && z < zmax) // point inside CNW
-						return "4" + pointToCellQT(x, y, z, node.getCNW());
+						return "4" + pointToCell(x, y, z, node.getCNW());
 				}
 			}
 			else if (x >= xmid && x < xmax) // point inside SE or NE (Floor or Ceiling)
@@ -228,16 +229,16 @@ public final class UtilityFunctions
 				if (y >= ymin && y < ymid) // point inside SE (Floor or Ceiling)
 				{
 					if (z >= zmin && z < zmid) // point inside FSE
-						return "3" + pointToCellQT(x, y, z, node.getFSE());
+						return "3" + pointToCell(x, y, z, node.getFSE());
 					else if (z >= zmid && z < zmax) // point inside CSE
-						return "7" + pointToCellQT(x, y, z, node.getCSE());
+						return "7" + pointToCell(x, y, z, node.getCSE());
 				}
 				else if (y >= ymid && y < ymax) // point inside NE (Floor or Ceiling)
 				{
 					if (z >= zmin && z < zmid) // point inside FNE
-						return "1" + pointToCellQT(x, y, z, node.getFNE());
+						return "1" + pointToCell(x, y, z, node.getFNE());
 					else if (z >= zmid && z < zmax) // point inside CNE
-						return "5" + pointToCellQT(x, y, z, node.getCNE());
+						return "5" + pointToCell(x, y, z, node.getCNE());
 				}
 			}
 		}
@@ -245,17 +246,20 @@ public final class UtilityFunctions
 	}
 
 	// 2d quadtree intersect
-	public static boolean intersect (double x, double y, double r, Node node) {
+	public static boolean intersect (double x, double y, double r, Node node)
+	{
 		return circleSquareIntersect(x, y, r, node.getXmin(), node.getXmax(), node.getYmin(), node.getYmax());
 	}
 
 	// 3d quadtree intersect
-	public static boolean intersect (double x, double y, double z, double r, Node node) {
+	public static boolean intersect (double x, double y, double z, double r, Node node)
+	{
 		return sphereCubeIntersect(x, y, z, r, node.getXmin(), node.getXmax(), node.getYmin(), node.getYmax(), node.getZmin(), node.getZmax());
 	}
 
 	// 2d circle - square intersection check
-	public static boolean circleSquareIntersect (double x, double y, double r, double xmin, double xmax, double ymin, double ymax) {
+	public static boolean circleSquareIntersect (double x, double y, double r, double xmin, double xmax, double ymin, double ymax)
+	{
 		// if point is inside cell return true
 		if (x >= xmin && x <= xmax && y >= ymin && y <= ymax)
 			return true;
@@ -286,13 +290,14 @@ public final class UtilityFunctions
 			return true;
 
 		// else check the corner distance
-		final double corner_dist_sq = UtilityFunctions.square_distance(centers_dist_x,  centers_dist_y, ds / 2, ds / 2);
+		final double corner_dist_sq = UtilityFunctions.square_distance(centers_dist_x, centers_dist_y, ds / 2, ds / 2);
 
 		return corner_dist_sq <= r * r;
 	}
 
 	// 3d sphere - cube intersection check
-	public static boolean sphereCubeIntersect (double x, double y, double z, double r, double xmin, double xmax, double ymin, double ymax, double zmin, double zmax) {
+	public static boolean sphereCubeIntersect (double x, double y, double z, double r, double xmin, double xmax, double ymin, double ymax, double zmin, double zmax)
+	{
 		// if point is inside cell return true
 		if (x >= xmin && x <= xmax && y >= ymin && y <= ymax && z >= zmin && z <= zmax)
 			return true;
@@ -333,7 +338,8 @@ public final class UtilityFunctions
 	}
 
 	// get GD cell's i, j, k
-	public static int[] cellIJK (int cell, int N, boolean is3d) {
+	public static int[] cellIJK (int cell, int N, boolean is3d)
+	{
 		final int i = cell % N; // 2d/3d
 		final int j = (cell - i) / N; // 2d
 		
@@ -349,7 +355,8 @@ public final class UtilityFunctions
 	}
 
 	// get min & max x, y, z of GD cell in integer form
-	public static double[] cellBorders (int cell, int N, boolean is3d) {
+	public static double[] cellBorders (int cell, int N, boolean is3d)
+	{
 		// get cell's i, j, k
 		final int[] ijk = cellIJK(cell, N, is3d);
 		final int i = ijk[0];
@@ -376,7 +383,8 @@ public final class UtilityFunctions
 	}
 
 	// get min & max x, y, z of QT cell in string form
-	public static double[] cellBorders (String cell) {
+	public static double[] cellBorders (String cell)
+	{
 
 		double xmin = 0; // cell's floor-south-west corner coords initialization
 		double ymin = 0;
@@ -384,7 +392,8 @@ public final class UtilityFunctions
 
 		for (int i = 0; i < cell.length(); i++) // check cellname's digits
 		{
-			switch(cell.charAt(i)) {
+			switch(cell.charAt(i))
+			{
 				case '0': // 2d / 3d
 					ymin += 1.0 / Math.pow(2, i + 1); // if digit = 0 increase y0
 					break;
@@ -432,7 +441,8 @@ public final class UtilityFunctions
 	}
 
 	// return true if circle (x, y, r) is completely inside 2d cell (xmin, xmax, ymin, ymax)
-	public static boolean circleInsideCell (double x, double y, double r, double xmin, double xmax, double ymin, double ymax) {
+	public static boolean circleInsideCell (double x, double y, double r, double xmin, double xmax, double ymin, double ymax)
+	{
 		// if r > distance of center to cell borders, circle is not completely inside cell
 		if (r > Math.abs(x - xmin))
 			return false;
@@ -447,7 +457,8 @@ public final class UtilityFunctions
 	}
 
 	// return true if sphere (x, y, z, r) is completely inside 3d cell (xmin, xmax, ymin, ymax, zmin, zmax)
-	public static boolean circleInsideCell (double x, double y, double z, double r, double xmin, double xmax, double ymin, double ymax, double zmin, double zmax) {
+	public static boolean circleInsideCell (double x, double y, double z, double r, double xmin, double xmax, double ymin, double ymax, double zmin, double zmax)
+	{
 		// if r > distance of center to cell borders, sphere is not completely inside cell
 		if (r > Math.abs(x - xmin))
 			return false;
@@ -466,7 +477,8 @@ public final class UtilityFunctions
 	}
 
 	// return surrounding cells of GD cell in integer form
-	public static HashSet<Integer> surroundingCells (int cell, int N, boolean is3d, HashSet<Integer> southRow, HashSet<Integer> northRow, HashSet<Integer> westColumn, HashSet<Integer> eastColumn, HashSet<Integer> bottomLevel, HashSet<Integer> topLevel) {
+	public static HashSet<Integer> surroundingCells (int cell, int N, boolean is3d, HashSet<Integer> southRow, HashSet<Integer> northRow, HashSet<Integer> westColumn, HashSet<Integer> eastColumn, HashSet<Integer> bottomLevel, HashSet<Integer> topLevel)
+	{
 		final HashSet<Integer> surCells = new HashSet<>();
 
 		if (!westColumn.contains(cell)) // excluding west column
@@ -533,12 +545,8 @@ public final class UtilityFunctions
 
 	// check for duplicates in PriorityQueue
 	public static boolean isDuplicate (PriorityQueue<IdDist> pq, IdDist neighbor)
-	{
-		for (IdDist elem : pq)
-			if (elem.getId() == neighbor.getId())
-				return true;
-
-		return false;
+	{		
+		return pq.stream().anyMatch(el -> el.getId() == neighbor.getId());
 	}
 	
 	// PriorityQueue<IdDist> to String

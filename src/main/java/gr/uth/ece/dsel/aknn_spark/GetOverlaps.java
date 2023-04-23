@@ -15,17 +15,11 @@ public final class GetOverlaps implements Function<Tuple2<String, ArrayList<Tupl
 	private int N; // N*N or N*N*N cells
 	private final int K; // K neighbors
 	private Node root; // create root node
-	private final HashSet<String> overlaps; // list of overlapped cells
-	private final PriorityQueue<IdDist> neighbors; // neighbors list
-	private final ArrayList<Tuple2<String, Tuple2<Point, Boolean>>> outValue; // output value: <overlapped cell, qpoint, true/false>
 	
 	public GetOverlaps (HashMap<String, Integer> cell_tpoints, int k, String partitioning)
 	{
 		this.K = k;
 		this.partitioning = partitioning;
-		this.overlaps = new HashSet<>();
-		this.neighbors = new PriorityQueue<>(this.K, new IdDistComparator("max"));
-		this.outValue = new ArrayList<>();
 		this.cell_tpoints = cell_tpoints;
 	}
 	
@@ -43,32 +37,32 @@ public final class GetOverlaps implements Function<Tuple2<String, ArrayList<Tupl
 	public ArrayList<Tuple2<String, Tuple2<Point, Boolean>>> call (Tuple2<String, ArrayList<Tuple2<Point, PriorityQueue<IdDist>>>> input)
 	{
 		final String qcell = input._1; // query points' cell
-		
-		// clear list
-		this.outValue.clear();
+
+		HashSet<String> overlaps = new HashSet<>(); // list of overlapped cells
+
+		PriorityQueue<IdDist> neighbors ; // neighbors list
+
+		final ArrayList<Tuple2<String, Tuple2<Point, Boolean>>> outValue = new ArrayList<>(); // output value: <overlapped cell, qpoint, true/false>
 		
 		for (Tuple2<Point, PriorityQueue<IdDist>> tuple: input._2) // read next <query point, neighbors list> tuple
 		{
-			// clear lists
-			this.overlaps.clear();
-			this.neighbors.clear();
-			
 			Point qpoint = tuple._1; // get qpoint
-			this.neighbors.addAll(tuple._2); // get its neighbor list
+
+			neighbors = tuple._2; // get its neighbor list
 			
 			// call appropriate overlaps discovery function according to partitioning
 			if (this.partitioning.equals("gd"))
-				this.overlaps.addAll(GetOverlapsFunctions.getOverlapsGD(qcell, qpoint, this.K, this.N, this.cell_tpoints, this.neighbors)); // find overlaps
+				overlaps = new GetOverlapsFunctions().getOverlapsGD(qcell, qpoint, this.K, this.N, this.cell_tpoints, neighbors); // find overlaps
 			else if (this.partitioning.equals("qt"))
-				this.overlaps.addAll(GetOverlapsFunctions.getOverlapsQT(qcell, qpoint, this.K, this.root, this.cell_tpoints, this.neighbors)); // find overlaps
+				overlaps = new GetOverlapsFunctions().getOverlapsQT(qcell, qpoint, this.K, this.root, this.cell_tpoints, neighbors); // find overlaps
 			
-			boolean listComplete = this.overlaps.size() == 1 && this.overlaps.contains(qcell); // if overlaps contains only qcell, qpoint gets 'true' status
+			boolean listComplete = overlaps.size() == 1 && overlaps.contains(qcell); // if overlaps contains only qcell, qpoint gets 'true' status
 
 			// fill output list with tuples <cell, <qpoint, true/false>>
-			for (String cell: this.overlaps)
-				this.outValue.add(new Tuple2<>(cell, new Tuple2<>(qpoint, listComplete)));
+			for (String cell: overlaps)
+				outValue.add(new Tuple2<>(cell, new Tuple2<>(qpoint, listComplete)));
 		}
 		
-		return new ArrayList<>(this.outValue);
+		return outValue;
 	}
 }

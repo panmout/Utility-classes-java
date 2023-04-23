@@ -28,7 +28,7 @@ public final class GetOverlaps
 	{
 		this.qpoint = qp;
 		this.qcell = qc;
-		this.neighbors = new PriorityQueue<>(phase2neighbors);
+		this.neighbors = phase2neighbors;
 	}
 
 	public void setN (int n)
@@ -45,9 +45,9 @@ public final class GetOverlaps
 	{
 		// call appropriate function according to partitioning and iterate query points of this cell
 		if (this.partitioning.equals("gd"))
-			return GetOverlapsFunctions.getOverlapsGD(this.qcell, this.qpoint, this.K, this.N, this.cell_tpoints, this.neighbors); // find its overlaps
+			return new GetOverlapsFunctions().getOverlapsGD(this.qcell, this.qpoint, this.K, this.N, this.cell_tpoints, this.neighbors); // find its overlaps
 		else if (this.partitioning.equals("qt"))
-			return GetOverlapsFunctions.getOverlapsQT(this.qcell, this.qpoint, this.K, this.root, this.cell_tpoints, this.neighbors); // find its overlaps
+			return new GetOverlapsFunctions().getOverlapsQT(this.qcell, this.qpoint, this.K, this.root, this.cell_tpoints, this.neighbors); // find its overlaps
 
 		return new HashSet<String>();
 	}

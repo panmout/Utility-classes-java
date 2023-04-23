@@ -25,13 +25,13 @@ public final class PointToTupleCellPoint implements PairFunction<Point, String, 
 	{
 		String cell = null;
 		if (this.N != 0)
-			cell = UtilityFunctions.pointToCellGD(p, this.N);
+			cell = UtilityFunctions.pointToCell(p, this.N);
 		else if (this.node != null)
 		{
 			if (this.node.getCNE() == null) // 2d
-				cell = UtilityFunctions.pointToCellQT(p.getX(), p.getY(), this.node);
+				cell = UtilityFunctions.pointToCell(p.getX(), p.getY(), this.node);
 			else // 3d
-				cell = UtilityFunctions.pointToCellQT(p.getX(), p.getY(), p.getZ(), this.node);
+				cell = UtilityFunctions.pointToCell(p.getX(), p.getY(), p.getZ(), this.node);
 		}
 		return new Tuple2<>(cell, p);
 	}

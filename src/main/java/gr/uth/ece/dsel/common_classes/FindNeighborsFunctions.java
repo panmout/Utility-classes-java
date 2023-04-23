@@ -6,51 +6,51 @@ import gr.uth.ece.dsel.UtilityFunctions;
 
 public final class FindNeighborsFunctions
 {
-    private static PriorityQueue<IdDist> neighbors;
+    private PriorityQueue<IdDist> neighbors;
 
 	// BF method
-    public static PriorityQueue<IdDist> getBfNeighbors(Point qpoint, ArrayList<Point> tpoints, int K)
+    public PriorityQueue<IdDist> getBfNeighbors(Point qpoint, ArrayList<Point> tpoints, int K)
 	{
-		neighbors = new PriorityQueue<>(K, new IdDistComparator("max")); // max heap of K neighbors
-		
+		this.neighbors = new PriorityQueue<>(K, new IdDistComparator("max")); // max heap of K neighbors;
+
 	    for (Point tpoint : tpoints)
 	    {	    	
 	    	final double dist = UtilityFunctions.distance(qpoint, tpoint); // distance calculation
 	    	final IdDist neighbor = new IdDist(tpoint.getId(), dist); // create neighbor
 	    	
 	    	// if PriorityQueue not full, add new tpoint (IdDist)
-	    	if (neighbors.size() < K)
+	    	if (this.neighbors.size() < K)
 	    	{
-		    	if (!UtilityFunctions.isDuplicate(neighbors, neighbor))
-		    		neighbors.offer(neighbor); // insert to queue
+		    	if (!UtilityFunctions.isDuplicate(this.neighbors, neighbor))
+					this.neighbors.offer(neighbor); // insert to queue
 	    	}
 	    	else // if queue is full, run some checks and replace elements
 	    	{
-	    		final double dm = neighbors.peek().getDist(); // get (not remove) distance of neighbor with maximum distance
+	    		final double dm = this.neighbors.peek().getDist(); // get (not remove) distance of neighbor with maximum distance
 	    		
   				if (dist < dm) // compare distance
   				{  					
-  					if (!UtilityFunctions.isDuplicate(neighbors, neighbor))
+  					if (!UtilityFunctions.isDuplicate(this.neighbors, neighbor))
   					{
-  						neighbors.poll(); // remove top element
-  			    		neighbors.offer(neighbor); // insert to queue
+						this.neighbors.poll(); // remove top element
+						this.neighbors.offer(neighbor); // insert to queue
   					}
   				} // end if
 	    	} // end else
 		} // end tpoints for
 	    
-	    return neighbors;
+	    return this.neighbors;
 	} // end BF_Neighbors
 
 	// PS method
-	public static PriorityQueue<IdDist> getPsNeighbors(Point qpoint, ArrayList<Point> tpoints, int K)
+	public PriorityQueue<IdDist> getPsNeighbors(Point qpoint, ArrayList<Point> tpoints, int K)
 	{
-		neighbors = new PriorityQueue<>(K, new IdDistComparator("max")); // max heap of K neighbors
+		this.neighbors = new PriorityQueue<>(K, new IdDistComparator("max")); // max heap of K neighbors;
 		
 	 	if (!tpoints.isEmpty()) // if this cell has any tpoints
 		{	
-			double x_left = tpoints.get(0).getX(); // leftmost tpoint's x
-			double x_right = tpoints.get(tpoints.size() - 1).getX(); // rightmost tpoint's x
+			final double x_left = tpoints.get(0).getX(); // leftmost tpoint's x
+			final double x_right = tpoints.get(tpoints.size() - 1).getX(); // rightmost tpoint's x
 			
 			// check for neighbors to the left or to the right of the query point
 			boolean check_right = false;
@@ -90,26 +90,26 @@ public final class FindNeighborsFunctions
 					cont_search = psNeighbors(qpoint, tpoints, K, high--);
 		} // end if
 	 	
-	    return neighbors;
+	    return this.neighbors;
 	 	// end PS_Neighbors
 	}
 	
 	// calculates PS neighbors
-	private static boolean psNeighbors(Point qpoint, ArrayList<Point> tpoints, int K, int i)
+	private boolean psNeighbors(Point qpoint, ArrayList<Point> tpoints, int K, int i)
 	{
 		final Point tpoint = tpoints.get(i); // get tpoint
 		
-		if (neighbors.size() < K) // if queue is not full, add new tpoints 
+		if (this.neighbors.size() < K) // if queue is not full, add new tpoints 
 		{
 			final double dist = UtilityFunctions.distance(qpoint, tpoint); // distance calculation
 			final IdDist neighbor = new IdDist(tpoint.getId(), dist); // create neighbor
 			
-	    	if (!UtilityFunctions.isDuplicate(neighbors, neighbor))
-	    		neighbors.offer(neighbor); // insert to queue
+	    	if (!UtilityFunctions.isDuplicate(this.neighbors, neighbor))
+				this.neighbors.offer(neighbor); // insert to queue
 		}
 		else  // if queue is full, run some checks and replace elements
 		{
-			final double dm = neighbors.peek().getDist(); // get (not remove) distance of neighbor with maximum distance
+			final double dm = this.neighbors.peek().getDist(); // get (not remove) distance of neighbor with maximum distance
 			
 			if (UtilityFunctions.xDistance(qpoint, tpoint) > dm) // if tpoint's x distance is greater than neighbors max distance
 				return false; // end for loop, no other points at this side will have smaller distance
@@ -121,10 +121,10 @@ public final class FindNeighborsFunctions
   				{
 					final IdDist neighbor = new IdDist(tpoint.getId(), dist); // create neighbor
 					
-  			    	if (!UtilityFunctions.isDuplicate(neighbors, neighbor))
+  			    	if (!UtilityFunctions.isDuplicate(this.neighbors, neighbor))
   			    	{
-  						neighbors.poll(); // remove top element
-  			    		neighbors.offer(neighbor); // insert to queue
+						this.neighbors.poll(); // remove top element
+						this.neighbors.offer(neighbor); // insert to queue
   			    	}
   				} // end if
 			} // end else
