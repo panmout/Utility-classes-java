@@ -2,7 +2,6 @@ package gr.uth.ece.dsel.aknn_spark;
 
 import org.apache.spark.api.java.function.PairFunction;
 import gr.uth.ece.dsel.common_classes.*;
-import gr.uth.ece.dsel.UtilityFunctions;
 import scala.Tuple2;
 
 public final class PointToTupleCellPoint implements PairFunction<Point, String, Point>

@@ -2,7 +2,6 @@ package gr.uth.ece.dsel.common_classes;
 
 import java.util.ArrayList;
 import java.util.PriorityQueue;
-import gr.uth.ece.dsel.UtilityFunctions;
 
 public final class FindNeighborsFunctions
 {

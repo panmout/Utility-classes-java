@@ -2,7 +2,7 @@ package gr.uth.ece.dsel.aknn_spark;
 
 import java.util.PriorityQueue;
 import gr.uth.ece.dsel.common_classes.*;
-import gr.uth.ece.dsel.UtilityFunctions;
+
 import org.apache.spark.api.java.function.Function;
 import scala.Tuple2;
 
