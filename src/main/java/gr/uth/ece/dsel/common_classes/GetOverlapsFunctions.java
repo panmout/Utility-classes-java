@@ -6,12 +6,12 @@ import java.util.PriorityQueue;
 
 public final class GetOverlapsFunctions
 {
-    private HashSet<String> overlaps; // overlapped cells go here
+    private final HashSet<String> overlaps; // overlapped cells go here
     private boolean is3d; // 2d or 3d mode
-	private int K; // AKNN K
+	private final int K; // AKNN K
 	private Node root; // create root node
 	private int N; // (2d) N*N or (3d) N*N*N cells
-	private HashMap<String, Integer> cell_tpoints; // hashmap of training points per cell list from Phase 1 <cell_id, number of training points>
+	private final HashMap<String, Integer> cell_tpoints; // hashmap of training points per cell list from Phase 1 <cell_id, number of training points>
 
 	public GetOverlapsFunctions (int K, HashMap<String, Integer> cell_tpoints)
 	{
@@ -33,6 +33,8 @@ public final class GetOverlapsFunctions
     // find grid overlaps
 	public HashSet<String> getOverlapsGD (String qcell, Point qpoint, PriorityQueue<IdDist> neighbors)
 	{
+		this.overlaps.clear();
+
         /*
 		Cell array (numbers inside cells are cell_id)
 
@@ -198,6 +200,7 @@ public final class GetOverlapsFunctions
 			final double ymin = borders[2];
 			final double ymax = borders[3];
 
+			// if circle is completely inside cell, stop search and tag qpoint as 'true'
 			if (!this.is3d) // 2d
 			{
 				if (!UtilityFunctions.circleInsideCell(xq, yq, R, xmin, xmax, ymin, ymax))
@@ -215,7 +218,7 @@ public final class GetOverlapsFunctions
 			if (case1) // point goes straight to next phase
 				this.overlaps.add(qcell); // add qpoint cell
 		}
-		// case 2: not enough neighbors in query point cell or circle overlaps other cells
+		// case 2: not enough neighbors in query point cell or circle overlaps other cells (case1 = false)
 		if (tpointsInQcell < this.K || !case1)
 		{
 			int sentinel = 0; // loop control variable
@@ -282,19 +285,33 @@ public final class GetOverlapsFunctions
 					for (String cell : this.overlaps)
 						overlaps_points += this.cell_tpoints.get(cell);
 
-				// overlaps_points += this.overlaps.stream().filter(Objects::nonNull).map(cell -> cell_tpoints.get(cell)).reduce((a, b) -> a + b).get();
-
-				R += 0.5 * ds; // increase radius by half ds
-
-				// if k neighbors found, run loop one more time and increase radius by the diagonal of a cell
-				if (overlaps_points + tpointsInQcell >= this.K)
+				// if query cell has >= K tpoints, but the circle overlaps neighboring cells
+				if (!case1)
 				{
-					sentinel++;
+					// check if there are any overlaps with tpoints
+					if (this.overlaps.isEmpty() || overlaps_points == 0)
+					{
+						this.overlaps.add(qcell); // add qpoint cell and tag qpoint as 'true'
+						sentinel += 2; // end while loop and return overlaps
+					}
+					else
+						sentinel += 1; // run while loop once more to get another layer of surrounding cells (in case R > ds)
+				}
+				// query cell has < K tpoints, increase radius, count tpoints and repeat
+				if (tpointsInQcell < this.K)
+				{
+					R += 0.5 * ds; // increase radius by half ds
 
-					if (!this.is3d) // 2d pythagorean
-						R += Math.sqrt(2) * ds;
-					else // 3d pythagorean
-						R += Math.sqrt(3) * ds;
+					// if k neighbors found, run loop one more time and increase radius by the diagonal of a cell
+					if (overlaps_points + tpointsInQcell >= this.K)
+					{
+						sentinel++;
+
+						if (!this.is3d) // 2d pythagorean
+							R += Math.sqrt(2) * ds;
+						else // 3d pythagorean
+							R += Math.sqrt(3) * ds;
+					}
 				}
 			}
 		}
@@ -305,7 +322,7 @@ public final class GetOverlapsFunctions
 	// find quadtree overlaps
 	public HashSet<String> getOverlapsQT (String qcell, Point qpoint, PriorityQueue<IdDist> neighbors)
 	{
-        this.overlaps = new HashSet<>();
+        this.overlaps.clear();
 
 		// read query point coordinates and neighbors list
 		final double xq = qpoint.getX();
@@ -381,14 +398,19 @@ public final class GetOverlapsFunctions
 
 			int n = neighbors.size() / 2; // divide by 2 because knnlist also contains distances (size = 2*[number of neighbors])
 
-			// if x > 0 (there are some neighbors in the list) set first value
-			// else (no neighbors) set second value
-
-			if (!this.is3d) // 2d
-				r1 = (n > 0) ? Math.sqrt((double) this.K / n) * R : 1.2 * Math.sqrt(K) * R;
-			else // 3d
-				r1 = (n > 0) ? Math.cbrt((double) this.K / n) * R : 1.2 * Math.cbrt(K) * R;
-
+			// if query cell has >= K tpoints, don't increase r
+			if (!case1)
+				r1 = R;
+			else
+			{
+				// if x > 0 (there are some neighbors in the list) set first value
+				// else (no neighbors) set second value
+				if (!this.is3d) // 2d
+					r1 = (n > 0) ? Math.sqrt((double) this.K / n) * R : 1.2 * Math.sqrt(K) * R;
+				else // 3d
+					r1 = (n > 0) ? Math.cbrt((double) this.K / n) * R : 1.2 * Math.cbrt(K) * R;
+			}
+			
 			int sentinel = 0; // loop control variable
 
 			// runs until it finds >=k tpoints, then once more
@@ -412,49 +434,62 @@ public final class GetOverlapsFunctions
 					for (String cell : this.overlaps)
 						overlaps_points += this.cell_tpoints.get(cell);
 
-				r1 += 0.1 * r1; // increase radius by 10%
+				// if query cell has >= K tpoints, but the circle overlaps neighboring cells
+				if (!case1)
+				{
+					// check if there are any overlaps with tpoints
+					if (this.overlaps.isEmpty() || overlaps_points == 0)
+						this.overlaps.add(qcell); // add qpoint cell and tag qpoint as 'true'
+					
+					sentinel += 2; // end while loop in either case and return overlaps
+				}
+				// query cell has < K tpoints, increase radius, count tpoints and repeat
+				if (tpointsInQcell < this.K)
+				{
+					r1 += 0.1 * r1; // increase radius by 10%
 
-				// if k neighbors found (first time only), run loop one more time and set r1 equal to the maximum distance from ipoint to all overlapped cells
-				if ((overlaps_points + tpointsInQcell >= this.K) && (sentinel == 0)) {
-					sentinel++;
+					// if k neighbors found (first time only), run loop one more time and set r1 equal to the maximum distance from ipoint to all overlapped cells
+					if ((overlaps_points + tpointsInQcell >= this.K) && (sentinel == 0)) {
+						sentinel++;
 
-					double maxSqrDist = 0; // square of maximum distance found so far (ipoint to cell)
+						double maxSqrDist = 0; // square of maximum distance found so far (ipoint to cell)
 
-					for (String cell : this.overlaps) // for every cell in overlaps
-					{
-						// get cell's borders
-						final double[] borders = UtilityFunctions.cellBorders(cell);
-						final double xmin = borders[0];
-						final double xmax = borders[1];
-						final double ymin = borders[2];
-						final double ymax = borders[3];
-
-						// maximum ipoint distance from cell in x-direction
-						final double maxX = Math.max(Math.abs(xq - xmin), Math.abs(xq - xmax));
-						// maximum ipoint distance from cell in y-direction
-						final double maxY = Math.max(Math.abs(yq - ymin), Math.abs(yq - ymax));
-
-						if (!this.is3d) // 2d
+						for (String cell : this.overlaps) // for every cell in overlaps
 						{
-							// replace current maximum squared distance if new is bigger
-							maxSqrDist = Math.max(maxSqrDist, maxX * maxX + maxY * maxY);
-						}
-						else // 3d
-						{
-							final double zmin = borders[4];
-							final double zmax = borders[5];
+							// get cell's borders
+							final double[] borders = UtilityFunctions.cellBorders(cell);
+							final double xmin = borders[0];
+							final double xmax = borders[1];
+							final double ymin = borders[2];
+							final double ymax = borders[3];
 
-							// maximum ipoint distance from cell in z-direction
-							final double maxZ = Math.max(Math.abs(zq - zmin), Math.abs(zq - zmax));
+							// maximum ipoint distance from cell in x-direction
+							final double maxX = Math.max(Math.abs(xq - xmin), Math.abs(xq - xmax));
+							// maximum ipoint distance from cell in y-direction
+							final double maxY = Math.max(Math.abs(yq - ymin), Math.abs(yq - ymax));
 
-							// replace current maximum squared distance if new is bigger
-							maxSqrDist = Math.max(maxSqrDist, maxX * maxX + maxY * maxY + maxZ * maxZ);
-						}
-					} // end for
-					r1 = Math.sqrt(maxSqrDist); // run overlaps check once more with this radius
-				} // end if
-				else if (sentinel == 1)
-					sentinel++;
+							if (!this.is3d) // 2d
+							{
+								// replace current maximum squared distance if new is bigger
+								maxSqrDist = Math.max(maxSqrDist, maxX * maxX + maxY * maxY);
+							}
+							else // 3d
+							{
+								final double zmin = borders[4];
+								final double zmax = borders[5];
+
+								// maximum ipoint distance from cell in z-direction
+								final double maxZ = Math.max(Math.abs(zq - zmin), Math.abs(zq - zmax));
+
+								// replace current maximum squared distance if new is bigger
+								maxSqrDist = Math.max(maxSqrDist, maxX * maxX + maxY * maxY + maxZ * maxZ);
+							}
+						} // end for
+						r1 = Math.sqrt(maxSqrDist); // run overlaps check once more with this radius
+					} // end if
+					else if (sentinel == 1)
+						sentinel++;
+				}
 			} // end while
 		} // end else
 
