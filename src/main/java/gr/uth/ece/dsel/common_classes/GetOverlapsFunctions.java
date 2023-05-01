@@ -12,15 +12,6 @@ public final class GetOverlapsFunctions
 	private Node root; // create root node
 	private int N; // (2d) N*N or (3d) N*N*N cells
 	private final HashMap<String, Integer> cell_tpoints; // hashmap of training points per cell list from Phase 1 <cell_id, number of training points>
-	// grid borders
-	// top-bottom rows, far left-right columns (rows and columns become walls in 3d)
-	private final HashSet<Integer> south_row = new HashSet<>(); // no S, SE, SW for cells in this set
-	private final HashSet<Integer> north_row = new HashSet<>(); // no N, NE, NW for cells in this set
-	private final HashSet<Integer> west_column = new HashSet<>(); // no W, NW, SW for cells in this set
-	private final HashSet<Integer> east_column = new HashSet<>(); // no E, NE, SE for cells in this set
-	// top-bottom z-level cells
-	private final HashSet<Integer> bottom_level = new HashSet<>(); // no lower level (-n*n) for cells in this set
-	private final HashSet<Integer> top_level = new HashSet<>(); // no upper level (+n*n) for cells in this set
 
 	public GetOverlapsFunctions (int K, HashMap<String, Integer> cell_tpoints)
 	{
@@ -42,8 +33,6 @@ public final class GetOverlapsFunctions
     // find grid overlaps
 	public HashSet<String> getOverlapsGD (String qcell, Point qpoint, PriorityQueue<IdDist> neighbors)
 	{
-		boolean check = qpoint.getId() % 1000 == 0 ? true : false; // print info for certain qpoints
-
 		this.overlaps.clear();
 
         /*
@@ -170,9 +159,45 @@ public final class GetOverlapsFunctions
 		// add number of training points in this cell, 0 if null
 		final int tpointsInQcell = this.cell_tpoints.getOrDefault(qcell, 0);
 
-		// get borders
-		gridBorders();
+		// top-bottom rows, far left-right columns (rows and columns become walls in 3d)
+	 	final HashSet<Integer> south_row = new HashSet<>(); // no S, SE, SW for cells in this set
+	 	final HashSet<Integer> north_row = new HashSet<>(); // no N, NE, NW for cells in this set
+	 	final HashSet<Integer> west_column = new HashSet<>(); // no W, NW, SW for cells in this set
+	 	final HashSet<Integer> east_column = new HashSet<>(); // no E, NE, SE for cells in this set
+		// top-bottom z-level cells
+	 	final HashSet<Integer> bottom_level = new HashSet<>(); // no lower level (-n*n) for cells in this set
+	 	final HashSet<Integer> top_level = new HashSet<>(); // no upper level (+n*n) for cells in this set
 
+		// fill sets
+		if (!this.is3d) // 2d
+		{
+			for (int i = 0; i < this.N; i++) // fill sets
+			{
+				south_row.add(i);
+				north_row.add((this.N - 1) * this.N + i);
+				west_column.add(i * this.N);
+				east_column.add(i * this.N + this.N - 1);
+			}
+		}
+		else // 3d
+		{
+			final int zfloor = this.N * this.N;
+
+			for (int i = 0; i < this.N; i++) // fill sets
+			{
+				for (int j = 0; j < this.N; j++)
+				{
+					south_row.add(i + (j * zfloor));
+					north_row.add((this.N - 1) * this.N + i + (j * zfloor));
+					west_column.add(i * this.N + (j * zfloor));
+					east_column.add(i * this.N + this.N - 1 + (j * zfloor));
+
+					bottom_level.add(j * this.N + i);
+					top_level.add(j * this.N + i + (this.N - 1) * zfloor);
+				}
+			}
+		}
+		
 		// case 1: there are at least knn in this cell and circle/sphere with radius R is completely inside the query cell
 		boolean case1 = true;
 
@@ -218,7 +243,7 @@ public final class GetOverlapsFunctions
 			final HashSet<Integer> tempOverlaps = new HashSet<>();
 
 			int counter = 0;
-
+			
 			// runs until it finds >=k tpoints, then once more
 			while (sentinel < 2)
 			{
@@ -226,7 +251,7 @@ public final class GetOverlapsFunctions
 
 				// get new layer of surrounding cells
 				for (int cell : candidateOverlaps)
-					tempOverlaps.addAll(UtilityFunctions.surroundingCells(cell, this.N, this.is3d, this.south_row, this.north_row, this.west_column, this.east_column, this.bottom_level, this.top_level));
+					tempOverlaps.addAll(UtilityFunctions.surroundingCells(cell, this.N, this.is3d, south_row, north_row, west_column, east_column, bottom_level, top_level));
 
 				candidateOverlaps.addAll(tempOverlaps);
 
@@ -272,13 +297,13 @@ public final class GetOverlapsFunctions
 				if (!this.overlaps.isEmpty())
 					for (String cell : this.overlaps)
 						overlaps_points += this.cell_tpoints.get(cell);
-
-				if (check)
+				/*
+				if (candidateOverlaps.size() > 20 || this.overlaps.size() > 20 || counter > 5 || R > 3*ds)
 				{
-					System.out.printf("qpoint:%d, case1 = %b, candidate overlaps size = %d, overlaps size = %d, overlaps tpoints = %d, counter = %d, R/ds = %4.3f\n", qpoint.getId(), case1, candidateOverlaps.size(), this.overlaps.size(), overlaps_points, counter, R/ds);
+					System.out.printf("qpoint:%d, case1:%b, candidate overlaps size:%d, overlaps size:%d, overlaps_points:%d, counter:%d, r1/ds=%3.2f\n", qpoint.getId(), case1, candidateOverlaps.size(), this.overlaps.size(), overlaps_points, counter, R/ds);
 					counter++;
 				}
-
+				*/
 				// if query cell has >= K tpoints, but the circle overlaps neighboring cells
 				if (!case1)
 				{
@@ -407,6 +432,8 @@ public final class GetOverlapsFunctions
 			
 			int sentinel = 0; // loop control variable
 
+			int counter = 0;
+
 			// runs until it finds >=k tpoints, then once more
 			while (sentinel < 2)
 			{
@@ -427,7 +454,13 @@ public final class GetOverlapsFunctions
 				if (!this.overlaps.isEmpty())
 					for (String cell : this.overlaps)
 						overlaps_points += this.cell_tpoints.get(cell);
-
+				/*
+				if (this.overlaps.size() > 20 || counter > 5 || r1 > 3*ds)
+				{
+					System.out.printf("qpoint:%d, case1:%b, overlaps size:%d, overlaps_points:%d, counter:%d, r1/ds=%3.2f\n", qpoint.getId(), case1, this.overlaps.size(), overlaps_points, counter, r1/ds);
+					counter++;
+				}
+				*/
 				// if query cell has >= K tpoints, but the circle overlaps neighboring cells
 				if (!case1)
 				{
@@ -489,29 +522,6 @@ public final class GetOverlapsFunctions
 
         return this.overlaps;
 	} // end getOverlapsQT
-
-	// get grid borders
-	private void gridBorders()
-	{
-		final int zfloor = this.is3d ? this.N * this.N : 0; // 0 for 2d and N*N for 3d: when added/subtracted goes one floor up/down
-
-		for (int i = 0; i < this.N; i++) // fill sets
-		{
-			for (int j = 0; j < this.N; j++)
-			{
-				this.south_row.add(i + (j * zfloor));
-				this.north_row.add((this.N - 1) * this.N + i + (j * zfloor));
-				this.west_column.add(i * this.N + (j * zfloor));
-				this.east_column.add(i * this.N + this.N - 1 + (j * zfloor));
-
-				if (this.is3d) // 3d only
-				{
-					this.bottom_level.add(j * this.N + i);
-					this.top_level.add(j * this.N + i + (this.N - 1) * zfloor);
-				}
-			}
-		}
-	}
 
 	// 2d quadtree range query
 	private void rangeQuery (double x, double y, double r, Node node, String address)
