@@ -344,7 +344,7 @@ public final class UtilityFunctions
 		if (is3d)
 		{
 			final int j3d = j % N;
-			final int k = ((cell - i) / N - j) / N;
+			final int k = ((cell - i) / N - j3d) / N;
 
 			return new int[]{i, j3d, k};
 		}
