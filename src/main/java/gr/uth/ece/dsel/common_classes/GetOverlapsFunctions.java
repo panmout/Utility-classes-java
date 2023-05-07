@@ -242,8 +242,6 @@ public final class GetOverlapsFunctions
 			// dummy set of cells to be added (throws ConcurrentModificationException if trying to modify set while traversing it)
 			final HashSet<Integer> tempOverlaps = new HashSet<>();
 
-			int counter = 0;
-			
 			// runs until it finds >=k tpoints, then once more
 			while (sentinel < 2)
 			{
@@ -297,13 +295,7 @@ public final class GetOverlapsFunctions
 				if (!this.overlaps.isEmpty())
 					for (String cell : this.overlaps)
 						overlaps_points += this.cell_tpoints.get(cell);
-				/*
-				if (candidateOverlaps.size() > 20 || this.overlaps.size() > 20 || counter > 5 || R > 3*ds)
-				{
-					System.out.printf("qpoint:%d, case1:%b, candidate overlaps size:%d, overlaps size:%d, overlaps_points:%d, counter:%d, r1/ds=%3.2f\n", qpoint.getId(), case1, candidateOverlaps.size(), this.overlaps.size(), overlaps_points, counter, R/ds);
-					counter++;
-				}
-				*/
+
 				// if query cell has >= K tpoints, but the circle overlaps neighboring cells
 				if (!case1)
 				{
@@ -432,8 +424,6 @@ public final class GetOverlapsFunctions
 			
 			int sentinel = 0; // loop control variable
 
-			int counter = 0;
-
 			// runs until it finds >=k tpoints, then once more
 			while (sentinel < 2)
 			{
@@ -454,13 +444,7 @@ public final class GetOverlapsFunctions
 				if (!this.overlaps.isEmpty())
 					for (String cell : this.overlaps)
 						overlaps_points += this.cell_tpoints.get(cell);
-				/*
-				if (this.overlaps.size() > 20 || counter > 5 || r1 > 3*ds)
-				{
-					System.out.printf("qpoint:%d, case1:%b, overlaps size:%d, overlaps_points:%d, counter:%d, r1/ds=%3.2f\n", qpoint.getId(), case1, this.overlaps.size(), overlaps_points, counter, r1/ds);
-					counter++;
-				}
-				*/
+
 				// if query cell has >= K tpoints, but the circle overlaps neighboring cells
 				if (!case1)
 				{
