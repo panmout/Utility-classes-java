@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.PriorityQueue;
 
-public final class GetOverlaps implements Function<Tuple2<String, ArrayList<Tuple2<Point, PriorityQueue<IdDist>>>>, ArrayList<Tuple2<String, Tuple2<Point, Boolean>>>>
+public final class GetOverlaps implements Function<Tuple2<String, ArrayList<Tuple2<Point, PriorityQueue<IdDist>>>>, ArrayList<Tuple2<String, Point>>>
 {
 	private final HashMap<String, Integer> cell_tpoints; // hashmap of training points per cell list from Phase 1 <cell_id, number of training points>
 	private final String partitioning; // gd or qt
@@ -34,7 +34,7 @@ public final class GetOverlaps implements Function<Tuple2<String, ArrayList<Tupl
 	}
 	
 	@Override
-	public ArrayList<Tuple2<String, Tuple2<Point, Boolean>>> call (Tuple2<String, ArrayList<Tuple2<Point, PriorityQueue<IdDist>>>> input)
+	public ArrayList<Tuple2<String, Point>> call (Tuple2<String, ArrayList<Tuple2<Point, PriorityQueue<IdDist>>>> input)
 	{
 		final String qcell = input._1; // query points' cell
 
@@ -42,7 +42,7 @@ public final class GetOverlaps implements Function<Tuple2<String, ArrayList<Tupl
 
 		PriorityQueue<IdDist> neighbors ; // neighbors list
 
-		final ArrayList<Tuple2<String, Tuple2<Point, Boolean>>> outValue = new ArrayList<>(); // output value: <overlapped cell, qpoint, true/false>
+		final ArrayList<Tuple2<String, Point>> outValue = new ArrayList<>(); // output value: <overlapped cell, qpoint>
 
 		final GetOverlapsFunctions ovl = new GetOverlapsFunctions (this.K, this.cell_tpoints);
 
@@ -63,11 +63,13 @@ public final class GetOverlaps implements Function<Tuple2<String, ArrayList<Tupl
 			else if (this.partitioning.equals("qt"))
 				overlaps = ovl.getOverlapsQT(qcell, qpoint, neighbors); // find overlaps
 			
-			boolean listComplete = overlaps.size() == 1 && overlaps.contains(qcell); // if overlaps contains only qcell, qpoint gets 'true' status
+			// if overlaps contains only qcell, qpoint gets 'true' status and is not going to output
+			boolean listComplete = overlaps.size() == 1 && overlaps.contains(qcell);
 
-			// fill output list with tuples <cell, <qpoint, true/false>>
-			for (String cell: overlaps)
-				outValue.add(new Tuple2<>(cell, new Tuple2<>(qpoint, listComplete)));
+			// fill output list with tuples <cell, qpoint> only for "false" qpoints
+			if (!listComplete)
+				for (String cell: overlaps)
+					outValue.add(new Tuple2<>(cell, qpoint));
 		}
 		
 		return outValue;
