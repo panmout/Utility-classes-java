@@ -579,6 +579,9 @@ public final class UtilityFunctions
 			IdDist n1 = pq1.poll();
 			if (!isDuplicate(pq, n1))
 				pq.offer(n1);
+			
+			if (pq.size() > k)
+				pq.poll();
 		}
 
 		while (!pq2.isEmpty())
@@ -586,6 +589,9 @@ public final class UtilityFunctions
 			IdDist n2 = pq2.poll();
 			if (!isDuplicate(pq, n2))
 				pq.offer(n2);
+			
+			if (pq.size() > k)
+				pq.poll();
 		}
 
 		while (pq.size() > k)

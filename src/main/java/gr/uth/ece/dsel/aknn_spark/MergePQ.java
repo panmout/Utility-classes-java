@@ -33,7 +33,7 @@ public final class MergePQ implements Function<Tuple2<Iterable<PriorityQueue<IdD
 		while (this.neighbors.size() > this.k)
 			this.neighbors.poll();
 		
-		return new PriorityQueue<>(this.neighbors);
+		return this.neighbors;
 	}
 	
 	private void joinPQ (PriorityQueue<IdDist> pq)
