@@ -6,7 +6,7 @@ import gr.uth.ece.dsel.common_classes.*;
 import java.util.ArrayList;
 import java.util.PriorityQueue;
 
-public final class FindNeighbors implements Function<Tuple2<Iterable<Point>, Iterable<Point>>, ArrayList<Tuple2<Point, PriorityQueue<IdDist>>>>
+public final class FindNeighbors implements Function<Tuple2<Iterable<Point>, Iterable<Point>>, Iterable<Tuple2<Point, PriorityQueue<IdDist>>>>
 {
     private final int k;
     private final String method;
@@ -18,7 +18,7 @@ public final class FindNeighbors implements Function<Tuple2<Iterable<Point>, Ite
 	}
 
     @Override
-	public ArrayList<Tuple2<Point, PriorityQueue<IdDist>>> call (Tuple2<Iterable<Point>, Iterable<Point>> tuple)
+	public Iterable<Tuple2<Point, PriorityQueue<IdDist>>> call (Tuple2<Iterable<Point>, Iterable<Point>> tuple)
 	{
         final ArrayList<Point> qpoints = new ArrayList<>();
         final ArrayList<Point> tpoints = new ArrayList<>();

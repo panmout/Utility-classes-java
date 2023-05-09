@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.PriorityQueue;
 
-public final class GetOverlaps implements Function<Tuple2<String, ArrayList<Tuple2<Point, PriorityQueue<IdDist>>>>, ArrayList<Tuple2<String, Point>>>
+public final class GetOverlaps implements Function<Tuple2<String, Iterable<Tuple2<Point, PriorityQueue<IdDist>>>>, Iterable<Tuple2<String, Point>>>
 {
 	private final HashMap<String, Integer> cell_tpoints; // hashmap of training points per cell list from Phase 1 <cell_id, number of training points>
 	private final String partitioning; // gd or qt
@@ -34,7 +34,7 @@ public final class GetOverlaps implements Function<Tuple2<String, ArrayList<Tupl
 	}
 	
 	@Override
-	public ArrayList<Tuple2<String, Point>> call (Tuple2<String, ArrayList<Tuple2<Point, PriorityQueue<IdDist>>>> input)
+	public Iterable<Tuple2<String, Point>> call (Tuple2<String, Iterable<Tuple2<Point, PriorityQueue<IdDist>>>> input)
 	{
 		final String qcell = input._1; // query points' cell
 
