@@ -53,7 +53,7 @@ public final class GetOverlaps implements Function<Tuple2<String, Iterable<Tuple
 		
 		for (Tuple2<Point, PriorityQueue<IdDist>> tuple: input._2) // read next <query point, neighbors list> tuple
 		{
-			Point qpoint = tuple._1; // get qpoint
+			final Point qpoint = tuple._1; // get qpoint
 
 			neighbors = tuple._2; // get its neighbor list
 			
@@ -62,12 +62,9 @@ public final class GetOverlaps implements Function<Tuple2<String, Iterable<Tuple
 				overlaps = ovl.getOverlapsGD(qcell, qpoint, neighbors); // find overlaps
 			else if (this.partitioning.equals("qt"))
 				overlaps = ovl.getOverlapsQT(qcell, qpoint, neighbors); // find overlaps
-			
-			// if overlaps contains only qcell, qpoint gets 'true' status and is not going to output
-			boolean listComplete = overlaps.size() == 1 && overlaps.contains(qcell);
 
-			// fill output list with tuples <cell, qpoint> only for "false" qpoints
-			if (!listComplete)
+			// send overlapped cells and qpoints to output
+			if (!overlaps.isEmpty())
 				for (String cell: overlaps)
 					outValue.add(new Tuple2<>(cell, qpoint));
 		}

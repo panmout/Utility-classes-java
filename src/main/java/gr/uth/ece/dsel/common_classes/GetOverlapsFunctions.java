@@ -225,8 +225,7 @@ public final class GetOverlapsFunctions
 					case1 = false;
 			}
 
-			if (case1) // point goes straight to next phase
-				this.overlaps.add(qcell); // add qpoint cell
+			// if qpoint gets 'true' tag, return empty overlaps set
 		}
 		
 		// case 2: not enough neighbors in query point cell or circle overlaps other cells (case1 = false)
@@ -384,8 +383,7 @@ public final class GetOverlapsFunctions
 					case1 = false;
 			}
 
-			if (case1) // point goes straight to next phase
-				this.overlaps.add(qcell); // add qpoint cell
+			// if qpoint gets 'true' tag, return empty overlaps set
 		}
 		// case 2: not enough neighbors in query point cell or circle overlaps other cells
 		if (tpointsInQcell < this.K || !case1)
